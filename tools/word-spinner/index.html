@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>កងបង្វិលចាប់ពាក្យ (Word Spinner)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .spinner-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .spinner-container {
+        grid-template-columns: 1.1fr 1fr;
+      }
+    }
+
+    .wheel-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      min-height: 400px;
+      position: relative;
+    }
+
+    /* Spinner wheel visual wrappers */
+    .wheel-wrapper {
+      position: relative;
+      width: 320px;
+      height: 320px;
+    }
+
+    .wheel-svg-container {
+      width: 100%;
+      height: 100%;
+      transition: transform 6s cubic-bezier(0.1, 0.8, 0.1, 1);
+    }
+
+    .wheel-pointer {
+      position: absolute;
+      top: -12px;
+      left: calc(50% - 15px);
+      width: 30px;
+      height: 30px;
+      z-index: 100;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+      transform: rotate(180deg);
+    }
+
+    .control-panel {
+      padding: 2rem;
+    }
+
+    .words-textarea {
+      width: 100%;
+      height: 150px;
+      font-family: var(--font-khmer);
+      padding: 0.75rem;
+      background: rgba(15, 23, 42, 0.6);
+      color: white;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      resize: none;
+      font-size: 0.95rem;
+    }
+
+    .words-textarea:focus {
+      outline: none;
+      border-color: #a855f7;
+    }
+
+    /* Result Modal overlay inside panel */
+    .result-announcement {
+      margin-top: 1.5rem;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #a855f7;
+      min-height: 40px;
+      text-align: center;
+      animation: pulseResult 1s infinite alternate;
+    }
+
+    @keyframes pulseResult {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.08); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #14b8a6;"></div>
+    <div class="blob blob-2" style="background: #8b5cf6;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="spinner-container">
+      
+      <!-- Wheel Panel -->
+      <section class="glass-panel wheel-panel">
+        <!-- Pointer -->
+        <svg class="wheel-pointer" viewBox="0 0 30 30" width="30" height="30">
+          <polygon points="15,0 30,30 0,30" fill="#ef4444" stroke="#ffffff" stroke-width="2" />
+        </svg>
+
+        <!-- SVG Wheel -->
+        <div class="wheel-wrapper">
+          <div class="wheel-svg-container" id="wheelNode">
+            <svg width="320" height="320" viewBox="0 0 200 200" id="wheelSvg">
+              <!-- Drawn by JS -->
+            </svg>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="spinBtn" onclick="spinWheel()" style="margin-top: 2rem; padding: 1rem 3rem; font-size: 1.2rem; font-weight:800;">
+          🎡 បង្វិលកង
+        </button>
+
+        <div class="result-announcement" id="resultLabel"></div>
+      </section>
+
+      <!-- Control Panel -->
+      <section class="glass-panel control-panel">
+        <h3 style="font-size: 1.25rem; font-weight:700; margin-bottom: 1rem;">✍️ បញ្ជីពាក្យសម្រាប់បង្វិល</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          បញ្ចូលពាក្យផ្សេងៗគ្នា (មួយជួរមួយពាក្យ) ដើម្បីបង្កើតចំណែកកងបង្វិល៖
+        </p>
+
+        <div class="form-group">
+          <textarea id="wordsInput" class="words-textarea" placeholder="បញ្ចូលពាក្យទីនេះ..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary" onclick="resetWordList('default')">ពាក្យគំរូ</button>
+          <button class="btn btn-secondary" onclick="resetWordList('clear')">សម្អាតទាំងអស់</button>
+          <button class="btn btn-success" onclick="applyWords()" style="flex-grow: 1;">ធ្វើឱ្យទាន់សម័យ (Update)</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('១១. កងបង្វិលចាប់ពាក្យ (Word Spinner)', true);
+      
+      // Default words list
+      const defaultWords = ['សាលារៀន\nសិស្សានុសិស្ស\nគ្រូបង្រៀន\nមេរៀន\nក្តារខៀន\nខ្មៅដៃ\nសៀវភៅ\nមិត្តភក្តិ'];
+      document.getElementById('wordsInput').value = defaultWords.join('\n');
+      
+      applyWords();
+    });
+
+    let words = [];
+    let isSpinning = false;
+    let currentRotation = 0;
+    const colors = [
+      '#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#8b5cf6', 
+      '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', 
+      '#10b981', '#22c55e', '#84cc16', '#eab308', '#f97316'
+    ];
+
+    function resetWordList(action) {
+      playClickSound();
+      if (action === 'clear') {
+        document.getElementById('wordsInput').value = '';
+      } else {
+        document.getElementById('wordsInput').value = 'សាលារៀន\nសិស្សានុសិស្ស\nគ្រូបង្រៀន\nមេរៀន\nក្តារខៀន\nខ្មៅដៃ\nសៀវភៅ\nមិត្តភក្តិ';
+      }
+      applyWords();
+    }
+
+    function applyWords() {
+      playClickSound();
+      const txt = document.getElementById('wordsInput').value.trim();
+      if (!txt) {
+        words = [];
+        drawEmptyWheel();
+        return;
+      }
+      
+      words = txt.split('\n').map(w => w.trim()).filter(w => w !== '');
+      drawWheel();
+      document.getElementById('resultLabel').textContent = '';
+    }
+
+    function drawEmptyWheel() {
+      const svg = document.getElementById('wheelSvg');
+      svg.innerHTML = `
+        <circle cx="100" cy="100" r="95" fill="rgba(255,255,255,0.03)" stroke="var(--glass-border)" stroke-width="4" />
+        <text x="100" y="100" font-size="12" fill="var(--text-muted)" text-anchor="middle" dominant-baseline="middle" font-family="var(--font-khmer)">គ្មានទិន្នន័យ</text>
+      `;
+    }
+
+    function drawWheel() {
+      const svg = document.getElementById('wheelSvg');
+      svg.innerHTML = '';
+
+      if (words.length === 0) {
+        drawEmptyWheel();
+        return;
+      }
+
+      const total = words.length;
+      const angleStep = 360 / total;
+
+      // Draw slices
+      for (let i = 0; i < total; i++) {
+        const startAngle = i * angleStep;
+        const endAngle = (i + 1) * angleStep;
+        const color = colors[i % colors.length];
+
+        // Draw path sector
+        const r = 95;
+        const cx = 100;
+        const cy = 100;
+
+        const rad1 = ((startAngle - 90) * Math.PI) / 180;
+        const rad2 = ((endAngle - 90) * Math.PI) / 180;
+
+        const x1 = cx + r * Math.cos(rad1);
+        const y1 = cy + r * Math.sin(rad1);
+        const x2 = cx + r * Math.cos(rad2);
+        const y2 = cy + r * Math.sin(rad2);
+
+        const largeArc = angleStep > 180 ? 1 : 0;
+        let d = '';
+
+        if (total === 1) {
+          // Circle
+          svg.innerHTML += `<circle cx="100" cy="100" r="95" fill="${color}" stroke="rgba(255,255,255,0.3)" stroke-width="2" />`;
+        } else {
+          d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+          const sector = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          sector.setAttribute('d', d);
+          sector.setAttribute('fill', color);
+          sector.setAttribute('stroke', 'rgba(255, 255, 255, 0.25)');
+          sector.setAttribute('stroke-width', '1.5');
+          svg.appendChild(sector);
+        }
+
+        // Add text labels inside slices
+        const textAngle = startAngle + angleStep / 2 - 90;
+        const textRad = (textAngle * Math.PI) / 180;
+        
+        // Position label at 60% radius
+        const labelX = cx + (r * 0.55) * Math.cos(textRad);
+        const labelY = cy + (r * 0.55) * Math.sin(textRad);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', labelX.toString());
+        label.setAttribute('y', labelY.toString());
+        label.setAttribute('fill', '#ffffff');
+        label.setAttribute('font-size', total > 10 ? '6' : '9');
+        label.setAttribute('font-weight', '700');
+        label.setAttribute('font-family', 'var(--font-khmer)');
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('dominant-baseline', 'middle');
+
+        // Rotate label to align with slice radial
+        const rotAngle = textAngle + 90; // Align radially
+        label.setAttribute('transform', `rotate(${rotAngle}, ${labelX}, ${labelY})`);
+
+        // Truncate if long
+        let txtVal = words[i];
+        if (txtVal.length > 8) txtVal = txtVal.substring(0, 7) + '..';
+        label.textContent = txtVal;
+        
+        svg.appendChild(label);
+      }
+
+      // Draw center pin
+      const centerPin = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      centerPin.setAttribute('cx', '100');
+      centerPin.setAttribute('cy', '100');
+      centerPin.setAttribute('r', '10');
+      centerPin.setAttribute('fill', '#ffffff');
+      centerPin.setAttribute('stroke', '#1e1b4b');
+      centerPin.setAttribute('stroke-width', '3');
+      svg.appendChild(centerPin);
+    }
+
+    function spinWheel() {
+      if (isSpinning || words.length === 0) return;
+      
+      playClickSound();
+      isSpinning = true;
+      document.getElementById('resultLabel').textContent = '';
+      
+      // Calculate random landing index
+      const total = words.length;
+      const targetIndex = Math.floor(Math.random() * total);
+      
+      // Angle per slice
+      const angleStep = 360 / total;
+      
+      // Target rotation angle (landing pointer is at 12 o'clock / 0 deg)
+      // To land on targetIndex, we need its slice center to rotate to pointer.
+      // Target angle relative to wheel start = (targetIndex * angleStep) + (angleStep / 2)
+      // Since pointer is at top (0 deg) and wheel rotation moves clockwise,
+      // the slice at targetIndex will move to top when rotated by: 360 - sliceCenterAngle
+      const targetSliceCenter = (targetIndex * angleStep) + (angleStep / 2);
+      const relativeSpinAngle = 360 - targetSliceCenter;
+
+      // Add multiple full spins (10 spins = 3600 deg)
+      const additionalSpins = 10 * 360;
+      const spinRotation = currentRotation + additionalSpins + relativeSpinAngle - (currentRotation % 360);
+
+      currentRotation = spinRotation;
+
+      // Apply transition
+      const wheel = document.getElementById('wheelNode');
+      wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+      // Make tick sounds while spinning
+      let tickCount = 0;
+      const tickSoundInterval = setInterval(() => {
+        if (!isSpinning) {
+          clearInterval(tickSoundInterval);
+          return;
+        }
+        playClickSound();
+        tickCount++;
+      }, 300);
+
+      // Stop spins
+      setTimeout(() => {
+        clearInterval(tickSoundInterval);
+        isSpinning = false;
+        
+        // Show result
+        const resultWord = words[targetIndex];
+        document.getElementById('resultLabel').textContent = `🎯 ជ្រើសរើសបាន៖ ${resultWord}`;
+        
+        playSuccessSound();
+        triggerConfetti();
+      }, 6000);
+    }
+  </script>
+</body>
+</html>

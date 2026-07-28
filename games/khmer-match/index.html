@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ផ្គូផ្គងរូបភាពនិងពាក្យខ្មែរ (Word-Image Match)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .match-card {
+      max-width: 800px;
+      margin: 1.5rem auto;
+      padding: 2rem;
+    }
+
+    .matching-board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      margin-top: 2rem;
+      position: relative;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .match-item {
+      padding: 1rem 1.5rem;
+      border: 2px solid var(--glass-border);
+      background: var(--glass-bg);
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      user-select: none;
+      min-height: 80px;
+    }
+
+    .match-item:hover {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: var(--glass-hover);
+      transform: translateY(-2px);
+    }
+
+    .match-item.selected {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.2);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .match-item.matched {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.2);
+      color: #a7f3d0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      opacity: 0.6;
+    }
+
+    .match-item.error {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.2);
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .emoji-display {
+      font-size: 3rem;
+    }
+
+    .word-display {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .category-selector {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #10b981;"></div>
+    <div class="blob blob-2" style="background: #06b6d4;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="glass-panel match-card">
+      <h3 style="font-size: 1.25rem; font-weight: 700; text-align: center; margin-bottom: 1rem;">🐯 ផ្គូផ្គងរូបភាព (ឆ្វេង) និងពាក្យខ្មែរ (ស្តាំ) ឱ្យត្រូវគ្នា</h3>
+      
+      <div class="category-selector">
+        <button class="btn btn-secondary" onclick="loadCategory('animals')" id="cat-animals">🦁 សត្វ</button>
+        <button class="btn btn-secondary" onclick="loadCategory('fruits')" id="cat-fruits">🍎 ផ្លែឈើ</button>
+        <button class="btn btn-secondary" onclick="loadCategory('objects')" id="cat-objects">🎒 វត្ថុប្រើប្រាស់</button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 1rem;">
+        <div style="font-weight: 600;">ពិន្ទុ៖ <span id="scoreText" style="color: #10b981; font-size: 1.5rem; font-weight: 800;">0</span></div>
+        <button class="btn btn-primary" onclick="resetBoard()" style="padding: 0.5rem 1rem; font-size: 0.9rem;">ផ្លាស់ប្តូររូបថ្មី</button>
+      </div>
+
+      <div class="matching-board">
+        <!-- Left Column: Emojis -->
+        <div class="column" id="leftColumn">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Right Column: Words -->
+        <div class="column" id="rightColumn">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('៤. ផ្គូផ្គងរូបភាពនិងពាក្យខ្មែរ', true);
+      loadCategory('animals');
+    });
+
+    const dataset = {
+      animals: [
+        { emoji: '🐶', word: 'ឆ្កែ' },
+        { emoji: '🐱', word: 'ឆ្មា' },
+        { emoji: '🐵', word: 'ស្វា' },
+        { emoji: '🐘', word: 'ដំរី' },
+        { emoji: '🐯', word: 'ខ្លា' },
+        { emoji: '🦁', word: 'សឹង្ហ' },
+        { emoji: '🐮', word: 'គោ' },
+        { emoji: '🐴', word: 'សេះ' },
+        { emoji: '🐷', word: 'ជ្រូក' },
+        { emoji: '🐔', word: 'មាន់' },
+        { emoji: '🦆', word: 'ទា' },
+        { emoji: '🐟', word: 'ត្រី' }
+      ],
+      fruits: [
+        { emoji: '🍎', word: 'ផ្លែប៉ោម' },
+        { emoji: '🍌', word: 'ផ្លែចេក' },
+        { emoji: '🍊', word: 'ផ្លែក្រូច' },
+        { emoji: '🍇', word: 'ផ្លែទំពាំងបាយជូរ' },
+        { emoji: '🥥', word: 'ផ្លែដូង' },
+        { emoji: '🍍', word: 'ផ្លែម្នាស់' },
+        { emoji: '🍉', word: 'ផ្លែឪឡឹក' },
+        { emoji: '🥭', word: 'ផ្លែស្វាយ' },
+        { emoji: '🍓', word: 'ផ្លែស្ត្រប៊ឺរី' },
+        { emoji: '🥑', word: 'ផ្លែប័រ' }
+      ],
+      objects: [
+        { emoji: '🎒', word: 'កាតាបសាលា' },
+        { emoji: '✏️', word: 'ខ្មៅដៃ' },
+        { emoji: '📖', word: 'សៀវភៅ' },
+        { emoji: '📐', word: 'បន្ទាត់ដែកកែង' },
+        { emoji: '💻', word: 'កុំព្យូទ័រ' },
+        { emoji: '🏫', word: 'សាលារៀន' },
+        { emoji: '⏰', word: 'នាឡិកាដាស់តឿន' },
+        { emoji: '🚲', word: 'កង់' },
+        { emoji: '🚗', word: 'ឡាន' },
+        { emoji: '🪑', word: 'កៅអី' }
+      ]
+    };
+
+    let currentCategory = 'animals';
+    let selectedImage = null;
+    let selectedWord = null;
+    let score = 0;
+    let matchedCount = 0;
+    let activePairs = [];
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function loadCategory(cat) {
+      playClickSound();
+      currentCategory = cat;
+      
+      // Update active category button styling
+      document.querySelectorAll('.category-selector .btn').forEach(btn => {
+        btn.className = 'btn btn-secondary';
+      });
+      document.getElementById(`cat-${cat}`).className = 'btn btn-primary';
+
+      resetBoard();
+    }
+
+    function resetBoard() {
+      selectedImage = null;
+      selectedWord = null;
+      matchedCount = 0;
+      
+      // Get all items in current category
+      const fullList = [...dataset[currentCategory]];
+      
+      // Select 4 random pairs
+      const selected = [];
+      for (let i = 0; i < 4; i++) {
+        if (fullList.length === 0) break;
+        const idx = Math.floor(Math.random() * fullList.length);
+        selected.push(fullList.splice(idx, 1)[0]);
+      }
+      activePairs = selected;
+
+      // Shuffle images for left, words for right
+      const leftItems = [...selected].sort(() => Math.random() - 0.5);
+      const rightItems = [...selected].sort(() => Math.random() - 0.5);
+
+      // Render Left Column
+      const leftCol = document.getElementById('leftColumn');
+      leftCol.innerHTML = '';
+      leftItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'match-item';
+        div.innerHTML = `<span class="emoji-display">${item.emoji}</span>`;
+        div.dataset.matchValue = item.word;
+        div.addEventListener('click', () => handleSelect('image', div));
+        leftCol.appendChild(div);
+      });
+
+      // Render Right Column
+      const rightCol = document.getElementById('rightColumn');
+      rightCol.innerHTML = '';
+      rightItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'match-item';
+        div.innerHTML = `<span class="word-display">${item.word}</span>`;
+        div.dataset.matchValue = item.word;
+        div.addEventListener('click', () => handleSelect('word', div));
+        rightCol.appendChild(div);
+      });
+    }
+
+    function handleSelect(type, element) {
+      if (element.classList.contains('matched')) return;
+
+      playClickSound();
+
+      if (type === 'image') {
+        // Deselect previous image
+        document.querySelectorAll('#leftColumn .match-item').forEach(el => el.classList.remove('selected'));
+        selectedImage = element;
+        element.classList.add('selected');
+      } else {
+        // Deselect previous word
+        document.querySelectorAll('#rightColumn .match-item').forEach(el => el.classList.remove('selected'));
+        selectedWord = element;
+        element.classList.add('selected');
+      }
+
+      checkMatch();
+    }
+
+    function checkMatch() {
+      if (selectedImage && selectedWord) {
+        const imgVal = selectedImage.dataset.matchValue;
+        const wordVal = selectedWord.dataset.matchValue;
+
+        if (imgVal === wordVal) {
+          // Success match
+          selectedImage.className = 'match-item matched';
+          selectedWord.className = 'match-item matched';
+          
+          score += 10;
+          document.getElementById('scoreText').textContent = toKhmerNum(score);
+          
+          playSuccessSound();
+          showToast('ត្រឹមត្រូវហើយ! 🎯', 'success');
+
+          matchedCount++;
+          if (matchedCount === 4) {
+            // Completed all 4
+            setTimeout(() => {
+              triggerConfetti();
+              playSuccessSound();
+              showToast('អបអរសាទរ! អ្នកបានផ្គូផ្គងត្រូវទាំងអស់!', 'success');
+              resetBoard();
+            }, 800);
+          }
+        } else {
+          // Error match
+          const tempImg = selectedImage;
+          const tempWord = selectedWord;
+          
+          tempImg.classList.add('error');
+          tempWord.classList.add('error');
+          
+          playFailSound();
+          showToast('មិនត្រូវគ្នាទេ! សាកល្បងគូផ្សេងទៀត', 'error');
+
+          setTimeout(() => {
+            tempImg.classList.remove('error', 'selected');
+            tempWord.classList.remove('error', 'selected');
+          }, 500);
+        }
+
+        // Reset selections
+        selectedImage = null;
+        selectedWord = null;
+      }
+    }
+  </script>
+</body>
+</html>

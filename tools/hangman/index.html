@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ល្បែងទាយពាក្យ (Hangman)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .game-card {
+      max-width: 750px;
+      margin: 1.5rem auto;
+      padding: 2rem;
+    }
+
+    .hangman-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .hangman-layout {
+        grid-template-columns: 220px 1fr;
+      }
+    }
+
+    .visual-gallows {
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      min-height: 240px;
+    }
+
+    /* Hanging parts styling */
+    .gallows-line {
+      fill: none;
+      stroke: var(--text-secondary);
+      stroke-width: 4px;
+      stroke-linecap: round;
+    }
+
+    .hangman-part {
+      fill: none;
+      stroke: #ef4444;
+      stroke-width: 3.5px;
+      stroke-linecap: round;
+      display: none;
+    }
+
+    .word-display {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: 6px;
+      text-align: center;
+      margin: 1.5rem 0;
+      min-height: 50px;
+      color: white;
+    }
+
+    .keyboard-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 576px) {
+      .keyboard-grid {
+        grid-template-columns: repeat(10, 1fr);
+      }
+    }
+
+    .key-btn {
+      padding: 0.6rem 0.2rem;
+      font-size: 1.1rem;
+      font-weight: 800;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: white;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .key-btn:hover:not(:disabled) {
+      background: var(--glass-hover);
+      border-color: rgba(239, 68, 68, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .key-btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
+    .key-correct {
+      background: rgba(16, 185, 129, 0.2) !important;
+      border-color: #10b981 !important;
+      color: #a7f3d0 !important;
+    }
+
+    .key-incorrect {
+      background: rgba(239, 68, 68, 0.2) !important;
+      border-color: #ef4444 !important;
+      color: #fca5a5 !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #ef4444;"></div>
+    <div class="blob blob-2" style="background: #a855f7;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="glass-panel game-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div style="font-size: 1.1rem; font-weight: 600;">ពិន្ទុ៖ <span id="scoreText" style="color: #ef4444; font-size: 1.5rem; font-weight: 800;">0</span></div>
+        <button class="btn btn-secondary" onclick="startNewGame()" style="padding: 0.5rem 1rem; font-size: 0.9rem;">ផ្លាស់ប្តូរពាក្យថ្មី</button>
+      </div>
+
+      <h3 style="font-size: 1.25rem; font-weight: 700; text-align: center;">🧗 ល្បែងទាយពាក្យភាសាអង់គ្លេស (Hangman)</h3>
+      <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center;">ជ្រើសរើសតួអក្សរ A ដល់ Z ដើម្បីផ្គុំជាពាក្យអប់រំត្រឹមត្រូវ</p>
+
+      <div class="hangman-layout">
+        <!-- Gallows display -->
+        <div class="visual-gallows">
+          <svg width="150" height="200" viewBox="0 0 100 150">
+            <!-- Gallows base, pole, beam, rope -->
+            <line x1="10" y1="140" x2="80" y2="140" class="gallows-line" />
+            <line x1="30" y1="140" x2="30" y2="20" class="gallows-line" />
+            <line x1="30" y1="20" x2="70" y2="20" class="gallows-line" />
+            <line x1="70" y1="20" x2="70" y2="40" class="gallows-line" style="stroke-width: 2px;" />
+            
+            <!-- Hangman parts (ID mapped) -->
+            <!-- 1. Head -->
+            <circle cx="70" cy="50" r="10" class="hangman-part" id="part-0" />
+            <!-- 2. Body -->
+            <line x1="70" y1="60" x2="70" y2="100" class="hangman-part" id="part-1" />
+            <!-- 3. Left Arm -->
+            <line x1="70" y1="70" x2="50" y2="85" class="hangman-part" id="part-2" />
+            <!-- 4. Right Arm -->
+            <line x1="70" y1="70" x2="90" y2="85" class="hangman-part" id="part-3" />
+            <!-- 5. Left Leg -->
+            <line x1="70" y1="100" x2="55" y2="125" class="hangman-part" id="part-4" />
+            <!-- 6. Right Leg -->
+            <line x1="70" y1="100" x2="85" y2="125" class="hangman-part" id="part-5" />
+          </svg>
+        </div>
+
+        <!-- Problem & Keyboard area -->
+        <div>
+          <div class="word-display" id="wordContainer">
+            _ _ _ _ _
+          </div>
+
+          <div style="font-size: 0.9rem; color: var(--text-muted); text-align: center; margin-bottom: 1rem;" id="hintLabel">
+            តម្រុយ៖ (បកប្រែជាភាសាខ្មែរ)
+          </div>
+
+          <!-- Keyboard -->
+          <div class="keyboard-grid" id="keyboardContainer">
+            <!-- A-Z buttons -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('១៧. ល្បែងទាយពាក្យ (Hangman)', true);
+      startNewGame();
+    });
+
+    const vocabulary = [
+      { english: 'SCHOOL', khmer: 'សាលារៀន' },
+      { english: 'TEACHER', khmer: 'គ្រូបង្រៀន' },
+      { english: 'STUDENT', khmer: 'សិស្សានុសិស្ស' },
+      { english: 'BOOK', khmer: 'សៀវភៅ' },
+      { english: 'PENCIL', khmer: 'ខ្មៅដៃ' },
+      { english: 'WHITEBOARD', khmer: 'ក្តារខៀន' },
+      { english: 'CLASSROOM', khmer: 'បន្ទប់រៀន' },
+      { english: 'COMPUTER', khmer: 'កុំព្យូទ័រ' },
+      { english: 'FRIEND', khmer: 'មិត្តភក្តិ' },
+      { english: 'LIBRARY', khmer: 'បណ្ណាល័យ' },
+      { english: 'EDUCATION', khmer: 'ការអប់រំ' },
+      { english: 'MATHEMATICS', khmer: 'គណិតវិទ្យា' },
+      { english: 'SCIENCE', khmer: 'វិទ្យាសាស្ត្រ' },
+      { english: 'READING', khmer: 'ការអាន' }
+    ];
+
+    let currentWord = '';
+    let currentKhmerHint = '';
+    let guessedLetters = [];
+    let wrongGuesses = 0;
+    let score = 0;
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function startNewGame() {
+      // Pick random word
+      const pair = vocabulary[Math.floor(Math.random() * vocabulary.length)];
+      currentWord = pair.english;
+      currentKhmerHint = pair.khmer;
+      
+      guessedLetters = [];
+      wrongGuesses = 0;
+
+      // Hide all hangman parts
+      for (let i = 0; i < 6; i++) {
+        document.getElementById(`part-${i}`).style.display = 'none';
+      }
+
+      document.getElementById('hintLabel').textContent = `💡 តម្រុយជាភាសាខ្មែរ៖ ${currentKhmerHint}`;
+      
+      renderWord();
+      renderKeyboard();
+    }
+
+    function renderWord() {
+      const container = document.getElementById('wordContainer');
+      let displayStr = '';
+      
+      for (let char of currentWord) {
+        if (guessedLetters.includes(char)) {
+          displayStr += char + ' ';
+        } else {
+          displayStr += '_ ';
+        }
+      }
+      container.textContent = displayStr.trim();
+    }
+
+    function renderKeyboard() {
+      const container = document.getElementById('keyboardContainer');
+      container.innerHTML = '';
+
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      for (let char of letters) {
+        const btn = document.createElement('button');
+        btn.className = 'key-btn';
+        btn.textContent = char;
+        btn.id = `key-${char}`;
+        btn.addEventListener('click', () => guess(char));
+        container.appendChild(btn);
+      }
+    }
+
+    function guess(char) {
+      if (wrongGuesses >= 6 || guessedLetters.includes(char)) return;
+
+      playClickSound();
+      guessedLetters.push(char);
+
+      const btn = document.getElementById(`key-${char}`);
+      btn.disabled = true;
+
+      if (currentWord.includes(char)) {
+        // Correct letter
+        btn.classList.add('key-correct');
+        renderWord();
+        playSuccessSound();
+
+        // Check if won
+        const isWon = currentWord.split('').every(letter => guessedLetters.includes(letter));
+        if (isWon) {
+          score += 15;
+          document.getElementById('scoreText').textContent = toKhmerNum(score);
+          showToast('អបអរសាទរ! អ្នកបានទាយត្រូវទាំងអស់ 🎉', 'success');
+          triggerConfetti();
+          playSuccessSound();
+          disableAllKeys();
+        }
+      } else {
+        // Wrong letter
+        btn.classList.add('key-incorrect');
+        // Show hangman part
+        document.getElementById(`part-${wrongGuesses}`).style.display = 'block';
+        wrongGuesses++;
+        playFailSound();
+
+        if (wrongGuesses >= 6) {
+          // Lost
+          showToast(`ចប់ល្បែង! ពាក្យត្រឹមត្រូវគឺ៖ ${currentWord}`, 'error');
+          // Fill in correct letters visually
+          document.getElementById('wordContainer').textContent = currentWord.split('').join(' ');
+          disableAllKeys();
+        }
+      }
+    }
+
+    function disableAllKeys() {
+      document.querySelectorAll('.key-btn').forEach(btn => btn.disabled = true);
+    }
+  </script>
+</body>
+</html>

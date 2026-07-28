@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>មជ្ឈមណ្ឌលឧបករណ៍អប់រំ និងល្បែងសិក្សា (Educational Hub)</title>
+  <link rel="stylesheet" href="global.css">
+  <style>
+    /* Custom styles for the Hub */
+    .hero-section {
+      text-align: center;
+      padding: 4rem 1rem 2rem 1rem;
+      position: relative;
+    }
+
+    .hero-title {
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 1rem;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 4px 20px rgba(168, 85, 247, 0.15);
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto 2.5rem auto;
+      line-height: 1.6;
+    }
+
+    /* Filter & Search Bar */
+    .controls-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin-bottom: 3rem;
+      padding: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .controls-container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab {
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: var(--font-khmer);
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .filter-tab.active, .filter-tab:hover {
+      background: var(--primary-gradient);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+    }
+
+    .search-box {
+      position: relative;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .search-input {
+      padding-left: 2.75rem;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Hub Grid */
+    .hub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Cards design */
+    .hub-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem 1.5rem;
+      height: 100%;
+      text-decoration: none;
+      color: inherit;
+      border: 1px solid var(--glass-border);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .hub-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--card-accent, var(--primary-gradient));
+      opacity: 0.8;
+      transition: var(--transition);
+    }
+
+    .hub-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(255, 255, 255, 0.25);
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .hub-card:hover::before {
+      height: 6px;
+    }
+
+    .card-icon {
+      font-size: 3rem;
+      margin-bottom: 1.25rem;
+      display: inline-block;
+      transition: transform 0.5s ease;
+    }
+
+    .hub-card:hover .card-icon {
+      transform: scale(1.15) rotate(5deg);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .card-desc {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      flex-grow: 1;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--card-color, #a855f7);
+      transition: var(--transition);
+    }
+
+    .hub-card:hover .card-footer {
+      gap: 0.75rem;
+    }
+
+    /* Card 22 - Full Width */
+    .card-full-width {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem 3rem;
+    }
+
+    .card-full-width .card-desc {
+      margin-bottom: 0;
+    }
+
+    .card-full-width-content {
+      flex-grow: 1;
+    }
+
+    @media (max-width: 768px) {
+      .card-full-width {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 2rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <!-- Hero Intro -->
+    <section class="hero-section">
+      <h1 class="hero-title">មជ្ឈមណ្ឌលឧបករណ៍អប់រំ និងល្បែងសិក្សា</h1>
+      <p class="hero-subtitle">ធនធានបង្រៀននិងរៀនបែបឌីជីថល ជំនួយការគ្រូបង្រៀន និងល្បែងសិក្សាកម្សាន្តសម្រាប់សិស្សានុសិស្សបឋមសិក្សា</p>
+    </section>
+
+    <!-- Filter and Search Controls -->
+    <section class="controls-container glass-panel">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">ទាំងអស់ (២២)</button>
+        <button class="filter-tab" data-filter="game">ល្បែងសិក្សា (១០)</button>
+        <button class="filter-tab" data-filter="tool">ឧបករណ៍ជំនួយ (១១)</button>
+        <button class="filter-tab" data-filter="db">ឃ្លាំងទិន្នន័យ (១)</button>
+      </div>
+      
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchBar" class="form-input search-input" placeholder="ស្វែងរកល្បែង ឬឧបករណ៍...">
+      </div>
+    </section>
+
+    <!-- Grid Layout of 22 Tools -->
+    <section class="hub-grid" id="toolsGrid">
+      
+      <!-- GAME 1 -->
+      <a href="games/fraction/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #f43f5e; --card-color: #f43f5e;">
+        <span class="card-icon">🍰</span>
+        <h2 class="card-title">១. ឧបករណ៍ប្រភាគ</h2>
+        <p class="card-desc">ស្វែងយល់អំពីប្រភាគតាមរយៈការកាត់នំខេក និងរបារប្រភាគអន្តរកម្មជាមួយ Slider បន្ថយបង្កើន។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- GAME 2 -->
+      <a href="games/speed-math/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #f97316; --card-color: #f97316;">
+        <span class="card-icon">⚡</span>
+        <h2 class="card-title">២. បូកដកលេខរហ័ស</h2>
+        <p class="card-desc">ល្បែងបូកនិងដកលេខប្រជែងនឹងពេលវេលាជួយបង្កើនសមត្ថភាពគណនាខួរក្បាលរហ័ស។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- GAME 3 -->
+      <a href="games/mul-div/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #eab308; --card-color: #eab308;">
+        <span class="card-icon">✖️</span>
+        <h2 class="card-title">៣. មេគុណនិងចែក</h2>
+        <p class="card-desc">រៀនមេគុណនិងចែកលេខតាមរូបភាពតំណាង និងល្បែងសំណួរអន្តរកម្មកម្សាន្ត។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- GAME 4 -->
+      <a href="games/khmer-match/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #10b981; --card-color: #10b981;">
+        <span class="card-icon">🐯</span>
+        <h2 class="card-title">៤. ផ្គូផ្គងរូបភាពនិងពាក្យខ្មែរ</h2>
+        <p class="card-desc">ល្បែងអូសទាញផ្គូផ្គងរូបភាពសត្វ និងផ្លែឈើ ទៅនឹងពាក្យអក្សរខ្មែរឱ្យបានត្រឹមត្រូវ។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- GAME 5 -->
+      <a href="games/clock-guess/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #06b6d4; --card-color: #06b6d4;">
+        <span class="card-icon">⏰</span>
+        <h2 class="card-title">៥. ទាយម៉ោង</h2>
+        <p class="card-desc">អានទ្រនិចនាឡិកា (ម៉ោង និងនាទី) រួចចុចទាយម៉ោងឌីជីថលឱ្យបានត្រឹមត្រូវ។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- GAME 6 -->
+      <a href="games/khmer-money/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #3b82f6; --card-color: #3b82f6;">
+        <span class="card-icon">💵</span>
+        <h2 class="card-title">៦. ស្គាល់លុយរៀលខ្មែរ</h2>
+        <p class="card-desc">ស្គាល់តម្លៃក្រដាសប្រាក់ខ្មែរ រៀនបូកសរុបលុយ ទិញទំនិញ និងទាយការអាប់ប្រាក់។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- GAME 7 -->
+      <a href="games/geometry/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #6366f1; --card-color: #6366f1;">
+        <span class="card-icon">📐</span>
+        <h2 class="card-title">៧. រាងធរណីមាត្រ</h2>
+        <p class="card-desc">ស្វែងយល់ពីរាង 2D និង 3D ផ្សេងៗ ចំនួនជ្រុង កំពូល និងលេងល្បែងសំណួររាងធរណីមាត្រ។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- GAME 8 -->
+      <a href="games/word-scramble/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #8b5cf6; --card-color: #8b5cf6;">
+        <span class="card-icon">🧩</span>
+        <h2 class="card-title">៨. តម្រៀបអក្សររាយប៉ាយ</h2>
+        <p class="card-desc">ល្បែងផ្គុំព្យញ្ជនៈ ស្រៈ និងជើងអក្សរខ្មែរដែលរាយប៉ាយ ទៅជាពាក្យត្រឹមត្រូវតាមរូបភាព។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- GAME 9 -->
+      <a href="games/odd-even/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #d946ef; --card-color: #d946ef;">
+        <span class="card-icon">🔢</span>
+        <h2 class="card-title">៩. ញែកលេខគូនិងលេខសេស</h2>
+        <p class="card-desc">បែងចែកលេខគូ និងលេខសេសដែលធ្លាក់ចុះពីលើ ដាក់ចូលក្នុងកន្ត្រកឱ្យបានត្រឹមត្រូវ។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- GAME 10 -->
+      <a href="games/memory-game/index.html" class="hub-card glass-panel" data-type="game" style="--card-accent: #ec4899; --card-color: #ec4899;">
+        <span class="card-icon">🃏</span>
+        <h2 class="card-title">១០. ល្បែងបើកកាតចងចាំ</h2>
+        <p class="card-desc">បើកកាតផ្គូផ្គងរូបភាពដូចគ្នាដើម្បីសាកល្បង និងបង្កើនការចងចាំរបស់កុមារ។</p>
+        <div class="card-footer">លេងល្បែង <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 11 -->
+      <a href="tools/word-spinner/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #14b8a6; --card-color: #14b8a6;">
+        <span class="card-icon">🎡</span>
+        <h2 class="card-title">១១. កងបង្វិលចាប់ពាក្យ</h2>
+        <p class="card-desc">កងបង្វិលអន្តរកម្មសម្រាប់គ្រូបង្រៀនចាប់ពាក្យចៃដន្យ ក្នុងសកម្មភាពអាន និងសរសេរ។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 12 -->
+      <a href="tools/name-spinner/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #06b6d4; --card-color: #06b6d4;">
+        <span class="card-icon">🎯</span>
+        <h2 class="card-title">១២. កងបង្វិលចាប់ឈ្មោះសិស្ស</h2>
+        <p class="card-desc">ចាប់ឈ្មោះសិស្សដោយចៃដន្យ សំរាប់ឡើងឆ្លើយសំណួរ (អាចទាញយកឈ្មោះពីឃ្លាំងទិន្នន័យបាន)។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 13 -->
+      <a href="tools/random-group/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #3b82f6; --card-color: #3b82f6;">
+        <span class="card-icon">👥</span>
+        <h2 class="card-title">១៣. រៀបសិស្សជាក្រុមដោយចៃដន្យ</h2>
+        <p class="card-desc">រៀបចំសិស្សក្នុងថ្នាក់ជាក្រុមការងារដោយចៃដន្យ និងយុត្តិធម៌ (អាចទាញយកឈ្មោះពី Database)។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 14 -->
+      <a href="tools/random-number/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #6366f1; --card-color: #6366f1;">
+        <span class="card-icon">🎰</span>
+        <h2 class="card-title">១៤. កម្មវិធីចាប់លេខចៃដន្យ</h2>
+        <p class="card-desc">ចាប់លេខសំណាង ឬលេខចៃដន្យដោយសេរី ជាមួយបែបផែន Roll 3D ធំៗច្បាស់ៗ។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 15 -->
+      <a href="tools/classroom-timer/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #8b5cf6; --card-color: #8b5cf6;">
+        <span class="card-icon">⏱️</span>
+        <h2 class="card-title">១៥. នាឡិការាប់ថយក្រោយ</h2>
+        <p class="card-desc">នាឡិកាកំណត់ពេលធ្វើកិច្ចការថ្នាក់រៀន រាប់ថយក្រោយស្អាតៗ និងមានសំឡេងរោទិ៍។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 16 -->
+      <a href="tools/scoreboard/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #d946ef; --card-color: #d946ef;">
+        <span class="card-icon">🏆</span>
+        <h2 class="card-title">១៦. ក្តារចុចពិន្ទុក្រុម</h2>
+        <p class="card-desc">កត់ត្រាពិន្ទុការប្រកួតប្រជែងជាក្រុមនៅក្នុងថ្នាក់ (គាំទ្ររហូតដល់ ៦ ក្រុម ជាមួយការកែឈ្មោះបាន)។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 17 -->
+      <a href="tools/hangman/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #ec4899; --card-color: #ec4899;">
+        <span class="card-icon">🧗</span>
+        <h2 class="card-title">១៧. ល្បែងទាយពាក្យ (Hangman)</h2>
+        <p class="card-desc">ល្បែងទាយតួអក្សរដើម្បីផ្គុំជាពាក្យខ្មែរ ឬអង់គ្លេសដ៏ពេញនិយម និងអប់រំ។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 18 -->
+      <a href="tools/whiteboard/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #f43f5e; --card-color: #f43f5e;">
+        <span class="card-icon">🎨</span>
+        <h2 class="card-title">១៨. ក្តារខៀនឌីជីថល</h2>
+        <p class="card-desc">ក្តារខៀនសម្រាប់គូរ សរសេរ បង្រៀន និងពន្យល់មេរៀន មានពណ៌ជក់ និងជ័រលុបច្រើនបែប។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 19 -->
+      <a href="tools/flashcards/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #f97316; --card-color: #f97316;">
+        <span class="card-icon">🎴</span>
+        <h2 class="card-title">១៩. បណ្ណពាក្យ (Flashcards)</h2>
+        <p class="card-desc">បណ្ណពាក្យអន្តរកម្មក្រឡាប់ 3D សម្រាប់ទន្ទេញមេរៀន ពាក្យគន្លឹះ និងគណិតវិទ្យា។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 20 -->
+      <a href="tools/pair-matching/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #eab308; --card-color: #eab308;">
+        <span class="card-icon">🔗</span>
+        <h2 class="card-title">២០. ស្វែងរកគូ</h2>
+        <p class="card-desc">ផ្គូផ្គងពាក្យខ្មែរ-អង់គ្លេស ឬសំណួរ-ចម្លើយគណិតវិទ្យា ដោយចុចភ្ជាប់ខ្សែសង្វាក់គ្នាចេញពីពីរជួរ។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- TOOL 21 -->
+      <a href="tools/tts-voice/index.html" class="hub-card glass-panel" data-type="tool" style="--card-accent: #10b981; --card-color: #10b981;">
+        <span class="card-icon">🗣️</span>
+        <h2 class="card-title">២១. មុខងារអានអត្ថបទជាសំឡេង</h2>
+        <p class="card-desc">វាយបញ្ចូលអត្ថបទជាភាសាខ្មែរ ឬភាសាអង់គ្លេស រួចឱ្យកម្មវិធីអានជាសំឡេងចេញមកក្រៅ។</p>
+        <div class="card-footer">បើកប្រើប្រាស់ <span>➡️</span></div>
+      </a>
+
+      <!-- DATABASE 22 (FULL WIDTH AT BOTTOM) -->
+      <a href="database/student-db/index.html" class="hub-card glass-panel card-full-width" data-type="db" style="--card-accent: linear-gradient(to right, #6366f1, #a855f7, #ec4899); --card-color: #a855f7;">
+        <span class="card-icon">💾</span>
+        <div class="card-full-width-content">
+          <h2 class="card-title">២២. ឃ្លាំងទិន្នន័យសិស្ស (Student Database)</h2>
+          <p class="card-desc">កត់ត្រា និងគ្រប់គ្រងទិន្នន័យសិស្សក្នុងថ្នាក់ (ឈ្មោះ, ភេទ, ពិន្ទុ) រក្សាទុកក្នុង Local Storage និងគាំទ្រការទាញចេញ/បញ្ចូលពី Excel (.xlsx) ជាមួយបណ្ណាល័យ SheetJS។</p>
+        </div>
+        <div class="card-footer" style="white-space: nowrap;">បើកគ្រប់គ្រង <span>➡️</span></div>
+      </a>
+
+    </section>
+  </main>
+
+  <script src="shared.js"></script>
+  <script>
+    // Audio trigger on button clicks
+    document.querySelectorAll('.hub-card, .filter-tab').forEach(el => {
+      el.addEventListener('click', () => {
+        playClickSound();
+      });
+    });
+
+    // Filtering & Searching Logic
+    const searchBar = document.getElementById('searchBar');
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const cards = document.querySelectorAll('.hub-card');
+
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    function filterCards() {
+      cards.forEach(card => {
+        const type = card.getAttribute('data-type');
+        const title = card.querySelector('.card-title').textContent.toLowerCase();
+        const desc = card.querySelector('.card-desc').textContent.toLowerCase();
+        
+        const matchesFilter = (currentFilter === 'all' || type === currentFilter);
+        const matchesSearch = title.includes(searchQuery) || desc.includes(searchQuery);
+
+        if (matchesFilter && matchesSearch) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // Filter tab events
+    filterTabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        filterTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentFilter = tab.getAttribute('data-filter');
+        filterCards();
+      });
+    });
+
+    // Search bar event
+    searchBar.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      filterCards();
+    });
+  </script>
+</body>
+</html>

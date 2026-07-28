@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>រៀបសិស្សជាក្រុមដោយចៃដន្យ (Group Maker)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .maker-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .maker-container {
+        grid-template-columns: 320px 1fr;
+      }
+    }
+
+    .control-panel {
+      padding: 1.5rem;
+    }
+
+    .results-panel {
+      padding: 1.5rem;
+    }
+
+    .names-textarea {
+      width: 100%;
+      height: 200px;
+      font-family: var(--font-khmer);
+      padding: 0.75rem;
+      background: rgba(15, 23, 42, 0.6);
+      color: white;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      resize: none;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+
+    .names-textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .group-card {
+      padding: 1.25rem;
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .group-card-header {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .group-member {
+      font-size: 0.95rem;
+      padding: 0.4rem 0.6rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .db-badge {
+      display: inline-block;
+      padding: 0.3rem 0.6rem;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #86efac;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      margin-bottom: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #3b82f6;"></div>
+    <div class="blob blob-2" style="background: #1d4ed8;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="maker-container">
+      
+      <!-- Control Input Panel -->
+      <section class="glass-panel control-panel">
+        <h3 style="font-size: 1.2rem; font-weight:700; margin-bottom: 0.5rem;">⚙️ កំណត់ក្រុម</h3>
+        
+        <div id="dbStatusArea"></div>
+
+        <div class="form-group">
+          <label class="form-label">បញ្ជីឈ្មោះសិស្ស (មួយជួរមួយឈ្មោះ)</label>
+          <textarea id="namesInput" class="names-textarea" placeholder="បញ្ចូលឈ្មោះសិស្ស..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+          <button class="btn btn-secondary" onclick="loadFromDatabase()" style="font-size: 0.85rem; padding: 0.5rem; border-color: #22c55e;">📥 ទាញពី DB</button>
+          <button class="btn btn-secondary" onclick="clearNames()" style="font-size: 0.85rem; padding: 0.5rem;">🗑️ សម្អាត</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ចំនួនក្រុមដែលចង់បាន</label>
+          <select id="groupCount" class="form-input">
+            <option value="2">២ ក្រុម</option>
+            <option value="3">៣ ក្រុម</option>
+            <option value="4" selected>៤ ក្រុម</option>
+            <option value="5">៥ ក្រុម</option>
+            <option value="6">៦ ក្រុម</option>
+            <option value="7">៧ ក្រុម</option>
+            <option value="8">៨ ក្រុម</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" onclick="generateGroups()" style="width: 100%; margin-top: 1rem; font-weight: 800;">
+          👥 បែងចែកក្រុមចៃដន្យ
+        </button>
+      </section>
+
+      <!-- Result Panel -->
+      <section class="glass-panel results-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="font-size: 1.25rem; font-weight:700;">📊 លទ្ធផលបែងចែកក្រុម</h3>
+          <button class="btn btn-secondary" id="copyBtn" onclick="copyGroupsText()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; display: none;">📋 ចម្លងចម្លើយ</button>
+        </div>
+
+        <div id="emptyState" style="text-align: center; color: var(--text-muted); padding: 5rem 1rem;">
+          👥 សូមបញ្ចូលបញ្ជីឈ្មោះសិស្ស រួចចុចប៊ូតុង "បែងចែកក្រុមចៃដន្យ" ដើម្បីដំណើរការ។
+        </div>
+
+        <div class="groups-grid" id="groupsDisplay">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('១៣. រៀបសិស្សជាក្រុមដោយចៃដន្យ', true);
+      loadFromDatabase();
+    });
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function loadFromDatabase() {
+      playClickSound();
+      const dbStudents = getStudents();
+      const statusArea = document.getElementById('dbStatusArea');
+      
+      if (dbStudents.length > 0) {
+        const studentNames = dbStudents.map(s => s.name);
+        document.getElementById('namesInput').value = studentNames.join('\n');
+        
+        statusArea.innerHTML = `
+          <div class="db-badge">
+            ✅ ទាញឈ្មោះបាន ${toKhmerNum(dbStudents.length)} នាក់
+          </div>
+        `;
+        showToast('បានទាញឈ្មោះសិស្សជោគជ័យ!', 'success');
+      } else {
+        // Fallback names
+        document.getElementById('namesInput').value = 'វិច្ឆិកា\nសុភា\nកុសល\nរក្សា\nរតនា\nចិន្តា\nនារី\nសិលា\nបុប្ផា\nតារា\nមុន្នី\nភក្តី';
+        statusArea.innerHTML = `
+          <div class="db-badge" style="background: rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.3); color: #fef08a;">
+            ⚠️ គ្មានទិន្នន័យ (ប្រើប្រាស់ឈ្មោះគំរូ)
+          </div>
+        `;
+      }
+    }
+
+    function clearNames() {
+      playClickSound();
+      document.getElementById('namesInput').value = '';
+    }
+
+    let generatedGroupData = []; // Store for copy text
+
+    function generateGroups() {
+      playClickSound();
+      const txt = document.getElementById('namesInput').value.trim();
+      if (!txt) {
+        showToast('សូមបញ្ចូលឈ្មោះសិស្សសិន!', 'error');
+        playFailSound();
+        return;
+      }
+
+      const names = txt.split('\n').map(n => n.trim()).filter(n => n !== '');
+      if (names.length === 0) {
+        showToast('រកមិនឃើញឈ្មោះត្រឹមត្រូវឡើយ!', 'error');
+        playFailSound();
+        return;
+      }
+
+      const numGroups = parseInt(document.getElementById('groupCount').value);
+      if (names.length < numGroups) {
+        showToast('ចំនួនសិស្សតិចជាងចំនួនក្រុម!', 'error');
+        playFailSound();
+        return;
+      }
+
+      // Shuffle names
+      const shuffled = [...names].sort(() => Math.random() - 0.5);
+
+      // Create group arrays
+      const groups = Array.from({ length: numGroups }, () => []);
+
+      // Distribute names
+      shuffled.forEach((name, index) => {
+        const groupIndex = index % numGroups;
+        groups[groupIndex].push(name);
+      });
+
+      generatedGroupData = groups;
+
+      // Render groups
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('copyBtn').style.display = 'block';
+      
+      const display = document.getElementById('groupsDisplay');
+      display.innerHTML = '';
+
+      const colors = ['#f43f5e', '#3b82f6', '#10b981', '#eab308', '#8b5cf6', '#d946ef', '#14b8a6', '#f97316'];
+
+      groups.forEach((group, index) => {
+        const card = document.createElement('div');
+        card.className = 'group-card';
+        card.style.borderColor = colors[index % colors.length];
+
+        let membersHtml = '';
+        group.forEach((member, mIdx) => {
+          membersHtml += `
+            <div class="group-member">
+              <span>👤</span> ${member}
+            </div>
+          `;
+        });
+
+        card.innerHTML = `
+          <div class="group-card-header" style="color: ${colors[index % colors.length]}">
+            <span>👥 ក្រុមទី ${toKhmerNum(index + 1)}</span>
+            <span style="font-size:0.8rem; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">
+              ${toKhmerNum(group.length)} នាក់
+            </span>
+          </div>
+          <div>${membersHtml}</div>
+        `;
+        display.appendChild(card);
+      });
+
+      playSuccessSound();
+      triggerConfetti();
+    }
+
+    function copyGroupsText() {
+      playClickSound();
+      if (generatedGroupData.length === 0) return;
+
+      let text = '=== លទ្ធផលបែងចែកក្រុម ===\n';
+      generatedGroupData.forEach((group, index) => {
+        text += `\n[ក្រុមទី ${index + 1} - សរុប ${group.length} នាក់]\n`;
+        group.forEach(member => {
+          text += `- ${member}\n`;
+        });
+      });
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('បានចម្លងបញ្ជីក្រុមទៅក្ដារតម្រៀប (Clipboard)!', 'success');
+      }).catch(err => {
+        showToast('មិនអាចចម្លងបានឡើយ!', 'error');
+      });
+    }
+  </script>
+</body>
+</html>

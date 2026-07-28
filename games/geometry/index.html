@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>រាងធរណីមាត្រ (Geometric Shapes)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .game-card {
+      max-width: 800px;
+      margin: 1.5rem auto;
+      padding: 2rem;
+    }
+
+    .geom-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .geom-layout {
+        grid-template-columns: 1.2fr 1fr;
+      }
+    }
+
+    .shape-display-box {
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      min-height: 280px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .shape-svg {
+      fill: none;
+      stroke: #a855f7;
+      stroke-width: 4px;
+      filter: drop-shadow(0 0 10px rgba(168,85,247,0.5));
+      animation: pulseShape 4s infinite ease-in-out;
+    }
+
+    @keyframes pulseShape {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .shape-info-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #a855f7;
+      margin-bottom: 0.75rem;
+    }
+
+    .shape-info-txt {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .choices-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .choice-btn {
+      padding: 1rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: white;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: var(--font-khmer);
+    }
+
+    .choice-btn:hover {
+      background: var(--glass-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+      border-color: rgba(168, 85, 247, 0.5);
+    }
+
+    .mode-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .active-tab {
+      background: var(--primary-gradient) !important;
+      border-color: transparent !important;
+    }
+
+    /* Grid for Explorer Mode */
+    .shapes-explorer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .explorer-card {
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      transition: var(--transition);
+    }
+
+    .explorer-card:hover {
+      transform: scale(1.05);
+      border-color: rgba(168, 85, 247, 0.5);
+      background: var(--glass-bg);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #a855f7;"></div>
+    <div class="blob blob-2" style="background: #0ea5e9;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="glass-panel game-card">
+      
+      <!-- Tabs -->
+      <div class="mode-tabs">
+        <button class="btn btn-secondary active-tab" id="tab-explore" onclick="switchMode('explore')">🔍 រៀនស្គាល់រាង</button>
+        <button class="btn btn-secondary" id="tab-quiz" onclick="switchMode('quiz')">🎮 លេងល្បែងទាយ</button>
+      </div>
+
+      <!-- EXPLORER MODE -->
+      <div id="explorerSection">
+        <h3 style="font-size: 1.25rem; font-weight: 700; text-align: center; margin-bottom: 1rem;">📐 ចុចលើរាងធរណីមាត្រដើម្បីសិក្សាអំពីលក្ខណៈរបស់វា</h3>
+        
+        <div class="shapes-explorer-grid" id="explorerGrid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Detail Modal Area inside Explorer -->
+        <div id="shapeDetailPanel" class="glass-panel" style="margin-top: 2rem; padding: 1.5rem; display: none;">
+          <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: center;" id="detailLayout">
+            <!-- Populated by selection -->
+          </div>
+        </div>
+      </div>
+
+      <!-- QUIZ MODE -->
+      <div id="quizSection" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <div style="font-size: 1.1rem; font-weight: 600;">ពិន្ទុ៖ <span id="scoreText" style="color: #6366f1; font-size: 1.5rem; font-weight: 800;">0</span></div>
+          <button class="btn btn-secondary" onclick="generateQuizQuestion()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">ប្តូរសំណួរ</button>
+        </div>
+
+        <h3 style="font-size: 1.25rem; font-weight: 700; text-align: center; margin-bottom: 1.5rem;" id="quizQuestion">
+          តើរាងខាងក្រោមនេះមានឈ្មោះអ្វី?
+        </h3>
+
+        <div class="geom-layout">
+          <!-- Shape Display -->
+          <div class="shape-display-box">
+            <svg width="200" height="200" viewBox="0 0 100 100" id="quizSvg">
+              <!-- Drawn by JS -->
+            </svg>
+          </div>
+
+          <!-- Choices -->
+          <div style="display: flex; flex-direction: column; justify-content: center;">
+            <div class="choices-list" id="choicesContainer">
+              <!-- choices buttons -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('៧. រាងធរណីមាត្រ (Geometric Shapes)', true);
+      initExplorer();
+    });
+
+    let currentMode = 'explore'; // explore, quiz
+    let quizCorrectAnswer = '';
+    let score = 0;
+
+    const shapesDataset = [
+      {
+        id: 'circle',
+        name: 'រង្វង់ (Circle)',
+        sides: 'គ្មានជ្រុង (០)',
+        corners: 'គ្មានកំពូល (០)',
+        desc: 'រង្វង់គឺជារាងបិទជិតដែលមានខ្សែកោងព័ទ្ធជុំវិញ និងចម្ងាយពីចំណុចកណ្តាលទៅគ្រប់កន្លែងលើខ្សែកោងមានប្រវែងស្មើគ្នាជានិច្ច។',
+        example: 'ឧទាហរណ៍៖ ព្រះអាទិត្យ កង់ឡាន នំដូណាត់ ថាសចម្រៀង។',
+        color: '#f43f5e',
+        drawSvg: (color) => `<circle cx="50" cy="50" r="35" class="shape-svg" stroke="${color}" />`
+      },
+      {
+        id: 'triangle',
+        name: 'ត្រីកោណ (Triangle)',
+        sides: 'មានជ្រុង ៣',
+        corners: 'មានកំពូល ៣',
+        desc: 'ត្រីកោណគឺជារាងធរណីមាត្រដែលមានជ្រុងបី និងមុំបីបូកបញ្ចូលគ្នាស្មើនឹង ១៨០ ដឺក្រេ។',
+        example: 'ឧទាហរណ៍៖ ដំបូលផ្ទះ ចំណិតភីហ្សា ផ្លាកសញ្ញាចរាចរណ៍ត្រីកោណ។',
+        color: '#eab308',
+        drawSvg: (color) => `<polygon points="50,15 15,80 85,80" class="shape-svg" stroke="${color}" />`
+      },
+      {
+        id: 'square',
+        name: 'ការ៉េ (Square)',
+        sides: 'មានជ្រុង ៤ (ប្រវែងស្មើគ្នាទាំងអស់)',
+        corners: 'មានកំពូល ៤',
+        desc: 'ការ៉េគឺជារាងបួនជ្រុងដែលមានជ្រុងទាំងបួនមានប្រវែងស្មើគ្នា និងមុំទាំងបួនជាមុំកែង (៩០ ដឺក្រេ)។',
+        example: 'ឧទាហរណ៍៖ ក្បឿងការ៉ូ ប្រអប់អំណោយ ក្តារអុក។',
+        color: '#10b981',
+        drawSvg: (color) => `<rect x="20" y="20" width="60" height="60" class="shape-svg" stroke="${color}" />`
+      },
+      {
+        id: 'rectangle',
+        name: 'ចតុកោណកែង (Rectangle)',
+        sides: 'មានជ្រុង ៤ (ជ្រុងឈមគ្នាមានប្រវែងស្មើគ្នា)',
+        corners: 'មានកំពូល ៤',
+        desc: 'ចតុកោណកែងគឺជារាងបួនជ្រុងដែលមានមុំទាំងបួនជាមុំកែង ហើយជ្រុងឈមគ្នាមានប្រវែងស្មើគ្នា និងស្របគ្នា។',
+        example: 'ឧទាហរណ៍៖ សៀវភៅសរសេរ ក្តារខៀន អេក្រង់ទូរស័ព្ទ ទ្វារផ្ទះ។',
+        color: '#06b6d4',
+        drawSvg: (color) => `<rect x="15" y="30" width="70" height="40" class="shape-svg" stroke="${color}" />`
+      },
+      {
+        id: 'pentagon',
+        name: 'បញ្ចកោណ (Pentagon)',
+        sides: 'មានជ្រុង ៥',
+        corners: 'មានកំពូល ៥',
+        desc: 'បញ្ចកោណគឺជារាងពហុកោណដែលមានជ្រុងប្រាំ និងកំពូលប្រាំ។',
+        example: 'ឧទាហរណ៍៖ ផ្កាយប្រាំជ្រុង ផ្លាកសញ្ញាព្រមានសាលារៀន ផ្ទះសត្វស្លាប។',
+        color: '#3b82f6',
+        drawSvg: (color) => `<polygon points="50,12 85,38 72,80 28,80 15,38" class="shape-svg" stroke="${color}" />`
+      },
+      {
+        id: 'cube',
+        name: 'គុប / ដុំគូប (Cube)',
+        sides: 'មានមុខ ៦ (រាងជាការ៉េស្មើគ្នា)',
+        corners: 'មានកំពូល ៨ និងគែម ១២',
+        desc: 'គូបគឺជារាងធរណីមាត្រ 3D ដែលមានមុខទាំង៦ជាការ៉េមានទំហំស្មើៗគ្នា។',
+        example: 'ឧទាហរណ៍៖ គ្រាប់ឡុកឡាក់ ប្រអប់ក្រដាសជូតមាត់ ដុំរូបប៊ីក (Rubik\'s Cube)។',
+        color: '#8b5cf6',
+        drawSvg: (color) => `
+          <g class="shape-svg" stroke="${color}">
+            <rect x="15" y="35" width="45" height="45" />
+            <rect x="35" y="15" width="45" height="45" />
+            <line x1="15" y1="35" x2="35" y2="15" />
+            <line x1="60" y1="35" x2="80" y2="15" />
+            <line x1="15" y1="80" x2="35" y2="60" />
+            <line x1="60" y1="80" x2="80" y2="60" />
+          </g>
+        `
+      },
+      {
+        id: 'cylinder',
+        name: 'ស៊ីឡាំង (Cylinder)',
+        sides: 'មានបាត ២ រាងជារង្វង់',
+        corners: 'គ្មានកំពូល',
+        desc: 'ស៊ីឡាំងជារាងធរណីមាត្រ 3D ដែលមានបាតសងខាងរាងជារង្វង់ស្របគ្នា និងមានផ្ទៃខ្សែកោងព័ទ្ធជុំវិញបាតទាំងពីរ។',
+        example: 'ឧទាហរណ៍៖ កំប៉ុងទឹកដោះគោ ខ្សែទុយោ អំពូលម៉ែត្រ បំពង់បឺត។',
+        color: '#d946ef',
+        drawSvg: (color) => `
+          <g class="shape-svg" stroke="${color}">
+            <ellipse cx="50" cy="25" rx="25" ry="8" />
+            <line x1="25" y1="25" x2="25" y2="75" />
+            <line x1="75" y1="25" x2="75" y2="75" />
+            <ellipse cx="50" cy="75" rx="25" ry="8" />
+          </g>
+        `
+      }
+    ];
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function switchMode(mode) {
+      playClickSound();
+      currentMode = mode;
+      document.getElementById('tab-explore').classList.remove('active-tab');
+      document.getElementById('tab-quiz').classList.remove('active-tab');
+
+      if (mode === 'explore') {
+        document.getElementById('tab-explore').classList.add('active-tab');
+        document.getElementById('explorerSection').style.display = 'block';
+        document.getElementById('quizSection').style.display = 'none';
+      } else {
+        document.getElementById('tab-quiz').classList.add('active-tab');
+        document.getElementById('explorerSection').style.display = 'none';
+        document.getElementById('quizSection').style.display = 'block';
+        generateQuizQuestion();
+      }
+    }
+
+    // --- EXPLORER LOGIC ---
+    function initExplorer() {
+      const grid = document.getElementById('explorerGrid');
+      grid.innerHTML = '';
+      
+      shapesDataset.forEach(shape => {
+        const card = document.createElement('div');
+        card.className = 'explorer-card glass-panel';
+        card.innerHTML = `
+          <svg width="60" height="60" viewBox="0 0 100 100">
+            ${shape.drawSvg(shape.color)}
+          </svg>
+          <div style="font-weight:700; font-size:0.9rem; margin-top:0.5rem;">${shape.name.split(' ')[0]}</div>
+        `;
+        card.addEventListener('click', () => showShapeDetails(shape));
+        grid.appendChild(card);
+      });
+    }
+
+    function showShapeDetails(shape) {
+      playClickSound();
+      const panel = document.getElementById('shapeDetailPanel');
+      panel.style.display = 'block';
+      
+      const layout = document.getElementById('detailLayout');
+      layout.style.gridTemplateColumns = window.innerWidth >= 768 ? '180px 1fr' : '1fr';
+      
+      layout.innerHTML = `
+        <div style="display:flex; justify-content:center; align-items:center; background:rgba(255,255,255,0.02); padding:1rem; border-radius:12px; border:1px solid var(--glass-border);">
+          <svg width="120" height="120" viewBox="0 0 100 100">
+            ${shape.drawSvg(shape.color)}
+          </svg>
+        </div>
+        <div>
+          <h4 class="shape-info-title">${shape.name}</h4>
+          <p class="shape-info-txt"><strong>📏 ជ្រុង៖</strong> ${shape.sides}</p>
+          <p class="shape-info-txt"><strong>📍 កំពូល៖</strong> ${shape.corners}</p>
+          <p class="shape-info-txt"><strong>ℹ️ ព័ត៌មាន៖</strong> ${shape.desc}</p>
+          <p class="shape-info-txt" style="color: #eab308; font-weight:600;">✨ ${shape.example}</p>
+        </div>
+      `;
+    }
+
+    // --- QUIZ LOGIC ---
+    function generateQuizQuestion() {
+      const quizType = Math.random() > 0.5 ? 'name' : 'sides'; // ask name or ask sides/corners
+      const correctShape = shapesDataset[Math.floor(Math.random() * shapesDataset.length)];
+      
+      const svg = document.getElementById('quizSvg');
+      svg.innerHTML = correctShape.drawSvg('#6366f1');
+
+      const choices = new Set();
+      const container = document.getElementById('choicesContainer');
+      container.innerHTML = '';
+
+      if (quizType === 'name') {
+        document.getElementById('quizQuestion').innerHTML = '❓ តើរាងធរណីមាត្រខាងក្រោមនេះមានឈ្មោះអ្វី?';
+        quizCorrectAnswer = correctShape.name.split(' (')[0]; // Khmer name
+        choices.add(quizCorrectAnswer);
+
+        while (choices.size < 4) {
+          const fake = shapesDataset[Math.floor(Math.random() * shapesDataset.length)].name.split(' (')[0];
+          choices.add(fake);
+        }
+      } else {
+        document.getElementById('quizQuestion').innerHTML = `❓ តើរាងខាងក្រោមនេះមានចំនួនជ្រុង និងកំពូលយ៉ាងណាដែរ?`;
+        quizCorrectAnswer = `${correctShape.sides} និង ${correctShape.corners}`.replace('ប្រវែងស្មើគ្នាទាំងអស់', '').replace('ជ្រុងឈមគ្នាមានប្រវែងស្មើគ្នា', '').trim();
+        choices.add(quizCorrectAnswer);
+
+        while (choices.size < 4) {
+          const fakeShape = shapesDataset[Math.floor(Math.random() * shapesDataset.length)];
+          const fake = `${fakeShape.sides} និង ${fakeShape.corners}`.replace('ប្រវែងស្មើគ្នាទាំងអស់', '').replace('ជ្រុងឈមគ្នាមានប្រវែងស្មើគ្នា', '').trim();
+          choices.add(fake);
+        }
+      }
+
+      // Render choices buttons
+      const choicesArr = Array.from(choices).sort(() => Math.random() - 0.5);
+      choicesArr.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice;
+        btn.addEventListener('click', () => submitAnswer(choice));
+        container.appendChild(btn);
+      });
+    }
+
+    function submitAnswer(chosenVal) {
+      if (chosenVal === quizCorrectAnswer) {
+        score += 10;
+        document.getElementById('scoreText').textContent = toKhmerNum(score);
+        playSuccessSound();
+        showToast('ឆ្លើយត្រូវហើយ! ពូកែមែន 🌟', 'success');
+        
+        if (score % 50 === 0) {
+          triggerConfetti();
+        }
+
+        generateQuizQuestion();
+      } else {
+        playFailSound();
+        showToast('ចម្លើយមិនទាន់ត្រឹមត្រូវទេ សាកល្បងម្តងទៀត!', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

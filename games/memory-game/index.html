@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ល្បែងបើកកាតចងចាំ (Memory Game)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .game-card {
+      max-width: 650px;
+      margin: 1.5rem auto;
+      padding: 2rem;
+    }
+
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin: 2rem 0;
+      perspective: 1000px;
+    }
+
+    /* 3D Flip Card */
+    .card-container {
+      aspect-ratio: 1;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+    }
+
+    .card-container.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(168, 85, 247, 0.2));
+      color: white;
+      font-size: 2.5rem;
+    }
+
+    .card-back {
+      background: var(--glass-bg);
+      transform: rotateY(180deg);
+      font-size: 2.8rem;
+    }
+
+    .card-container.matched .card-back {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #ec4899;"></div>
+    <div class="blob blob-2" style="background: #a855f7;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="glass-panel game-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div style="font-size: 1.1rem; font-weight: 600;">បើកបាន៖ <span id="movesText" style="color: #ec4899; font-size: 1.4rem; font-weight: 800;">0</span> ដង</div>
+        <button class="btn btn-primary" onclick="initGame()" style="padding: 0.5rem 1rem; font-size: 0.9rem;">🔄 លេងឡើងវិញ</button>
+      </div>
+
+      <h3 style="font-size: 1.25rem; font-weight: 700; text-align: center;">🃏 ល្បែងបើកកាតចងចាំ (Memory Game)</h3>
+      <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center;">ស្វែងរកកាតដែលមានរូបសត្វដូចគ្នាចំនួន ៨ គូ</p>
+
+      <!-- Cards Grid -->
+      <div class="memory-grid" id="memoryGrid">
+        <!-- Dynamically generated 16 cards -->
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('១០. ល្បែងបើកកាតចងចាំ', true);
+      initGame();
+    });
+
+    const emojis = ['🐶', '🐱', '🦊', '🐯', '🐮', '🐷', '🐵', '🐔'];
+    let cardElements = [];
+    let flippedCards = [];
+    let moves = 0;
+    let matchesCount = 0;
+    let lockBoard = false;
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function initGame() {
+      playClickSound();
+      moves = 0;
+      matchesCount = 0;
+      flippedCards = [];
+      lockBoard = false;
+      document.getElementById('movesText').textContent = toKhmerNum(moves);
+
+      // Create a double list of emojis
+      const gameDeck = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+
+      const grid = document.getElementById('memoryGrid');
+      grid.innerHTML = '';
+
+      gameDeck.forEach((emoji, index) => {
+        const card = document.createElement('div');
+        card.className = 'card-container';
+        card.dataset.emoji = emoji;
+        card.dataset.index = index;
+
+        card.innerHTML = `
+          <div class="card-face card-front">❓</div>
+          <div class="card-face card-back">${emoji}</div>
+        `;
+
+        card.addEventListener('click', () => flipCard(card));
+        grid.appendChild(card);
+      });
+    }
+
+    function flipCard(card) {
+      if (lockBoard) return;
+      if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+      playClickSound();
+      card.classList.add('flipped');
+      flippedCards.push(card);
+
+      if (flippedCards.length === 2) {
+        moves++;
+        document.getElementById('movesText').textContent = toKhmerNum(moves);
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      lockBoard = true;
+      const card1 = flippedCards[0];
+      const card2 = flippedCards[1];
+
+      if (card1.dataset.emoji === card2.dataset.emoji) {
+        // Match found
+        card1.classList.add('matched');
+        card2.classList.add('matched');
+        matchesCount++;
+        
+        playSuccessSound();
+        flippedCards = [];
+        lockBoard = false;
+
+        if (matchesCount === emojis.length) {
+          setTimeout(() => {
+            triggerConfetti();
+            playSuccessSound();
+            showToast('អបអរសាទរ! អ្នកបានឈ្នះល្បែងហើយ! 🎉', 'success');
+          }, 600);
+        }
+      } else {
+        // No match
+        playFailSound();
+        setTimeout(() => {
+          card1.classList.remove('flipped');
+          card2.classList.remove('flipped');
+          flippedCards = [];
+          lockBoard = false;
+        }, 1000);
+      }
+    }
+  </script>
+</body>
+</html>

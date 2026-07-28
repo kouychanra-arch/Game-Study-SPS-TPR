@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ឧបករណ៍ប្រភាគ (Fraction Tool)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .fraction-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .fraction-container {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .visual-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      min-height: 350px;
+    }
+
+    .control-panel {
+      padding: 2rem;
+    }
+
+    .fraction-text-display {
+      font-size: 4rem;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      margin: 1.5rem 0;
+    }
+
+    .fraction-line {
+      width: 80px;
+      height: 6px;
+      background: var(--text-primary);
+      margin: 5px 0;
+      border-radius: 3px;
+    }
+
+    .slider-container {
+      margin-bottom: 2rem;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .slider-input {
+      width: 100%;
+      height: 10px;
+      border-radius: 5px;
+      outline: none;
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid var(--glass-border);
+    }
+
+    .slider-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.1s;
+    }
+
+    .slider-input::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Tabs inside fractional tool */
+    .tab-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .tab-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      font-family: var(--font-khmer);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--primary-gradient);
+      color: white;
+      border-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #f43f5e;"></div>
+    <div class="blob blob-2" style="background: #ec4899;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="fraction-container">
+      
+      <!-- Visual Representational Panel -->
+      <section class="glass-panel visual-panel">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchTab('cake')">🎂 នំខេក (រង្វង់)</button>
+          <button class="tab-btn" onclick="switchTab('bar')">🍫 របារ (ចតុកោណ)</button>
+        </div>
+
+        <div id="svgContainer" style="width: 250px; height: 250px; display: flex; align-items: center; justify-content: center;">
+          <!-- SVG drawn dynamically -->
+        </div>
+
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <div style="font-size: 1.1rem; color: var(--text-secondary);" id="decimalDisplay">តម្លៃទសភាគ៖ 0.5</div>
+          <div style="font-size: 1.3rem; font-weight: 700; color: #f43f5e; margin-top: 0.25rem;" id="percentDisplay">៥០%</div>
+        </div>
+      </section>
+
+      <!-- Control Panel -->
+      <section class="glass-panel control-panel">
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center;">🎛️ បន្ថយបង្កើនប្រភាគ</h3>
+
+        <div class="slider-container">
+          <div class="slider-header">
+            <span>ភាគយក (ចំនួនចំណែកដែលយក) : <span style="color: #ec4899;" id="numeratorVal">1</span></span>
+          </div>
+          <input type="range" id="numSlider" class="slider-input" min="0" max="2" value="1">
+        </div>
+
+        <div class="slider-container">
+          <div class="slider-header">
+            <span>ភាគបែង (ចំនួនចំណែកសរុប) : <span style="color: #6366f1;" id="denominatorVal">2</span></span>
+          </div>
+          <input type="range" id="denSlider" class="slider-input" min="1" max="16" value="2">
+        </div>
+
+        <div class="fraction-text-display">
+          <div id="textNumerator">១</div>
+          <div class="fraction-line"></div>
+          <div id="textDenominator">២</div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    // Initialize page details
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('១. ឧបករណ៍ប្រភាគ (Fraction Tool)', true);
+      
+      const numSlider = document.getElementById('numSlider');
+      const denSlider = document.getElementById('denSlider');
+      
+      numSlider.addEventListener('input', updateFraction);
+      denSlider.addEventListener('input', () => {
+        // Adjust numerator max to match new denominator
+        numSlider.max = denSlider.value;
+        updateFraction();
+      });
+
+      updateFraction();
+    });
+
+    let currentVisual = 'cake'; // cake or bar
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩', '១០', '១១', '១២', '១៣', '១៤', '១៥', '១៦'];
+
+    function switchTab(tabName) {
+      playClickSound();
+      currentVisual = tabName;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      updateFraction();
+    }
+
+    function toKhmerNumber(num) {
+      if (num <= 16) return khmerDigits[num];
+      return num.toString().split('').map(digit => khmerDigits[parseInt(digit)]).join('');
+    }
+
+    function updateFraction() {
+      const num = parseInt(document.getElementById('numSlider').value);
+      const den = parseInt(document.getElementById('denSlider').value);
+
+      // Render numeric displays
+      document.getElementById('numeratorVal').textContent = num;
+      document.getElementById('denominatorVal').textContent = den;
+      
+      document.getElementById('textNumerator').textContent = toKhmerNumber(num);
+      document.getElementById('textDenominator').textContent = toKhmerNumber(den);
+
+      const ratio = num / den;
+      document.getElementById('decimalDisplay').textContent = `តម្លៃទសភាគ៖ ${ratio.toFixed(2)}`;
+      document.getElementById('percentDisplay').textContent = toKhmerNumber(Math.round(ratio * 100)) + '%';
+
+      // Draw SVG representation
+      const container = document.getElementById('svgContainer');
+      container.innerHTML = '';
+
+      if (currentVisual === 'cake') {
+        drawCake(container, num, den);
+      } else {
+        drawBar(container, num, den);
+      }
+    }
+
+    // Cake Drawing SVG (Circle Arc Slices)
+    function drawCake(container, num, den) {
+      const size = 220;
+      const radius = 100;
+      const cx = size / 2;
+      const cy = size / 2;
+      
+      let svgHtml = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+      
+      // Draw background circle base
+      svgHtml += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="rgba(255, 255, 255, 0.05)" stroke="var(--glass-border)" stroke-width="3" />`;
+
+      // If denominator is 1, draw full circle
+      if (den === 1) {
+        const fill = num === 1 ? 'url(#cakeGrad)' : 'none';
+        svgHtml += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fill}" stroke="rgba(255,255,255,0.2)" stroke-width="2" />`;
+      } else {
+        // Draw slices
+        const sliceAngle = 360 / den;
+        for (let i = 0; i < den; i++) {
+          const startAngle = i * sliceAngle - 90; // Start at top (12 o'clock)
+          const endAngle = (i + 1) * sliceAngle - 90;
+          
+          const isFilled = i < num;
+          const fill = isFilled ? 'url(#cakeGrad)' : 'rgba(255, 255, 255, 0.03)';
+          
+          // Calculate start & end coordinates
+          const rad1 = (startAngle * Math.PI) / 180;
+          const rad2 = (endAngle * Math.PI) / 180;
+          const x1 = cx + radius * Math.cos(rad1);
+          const y1 = cy + radius * Math.sin(rad1);
+          const x2 = cx + radius * Math.cos(rad2);
+          const y2 = cy + radius * Math.sin(rad2);
+          
+          // Arc path
+          const largeArcFlag = sliceAngle > 180 ? 1 : 0;
+          const pathD = `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+          
+          svgHtml += `<path d="${pathD}" fill="${fill}" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.5" />`;
+        }
+      }
+      
+      // Gradient defs
+      svgHtml += `
+        <defs>
+          <linearGradient id="cakeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f43f5e" />
+            <stop offset="100%" stop-color="#ec4899" />
+          </linearGradient>
+        </defs>
+      </svg>`;
+      
+      container.innerHTML = svgHtml;
+    }
+
+    // Bar Drawing SVG (Divided rectangles)
+    function drawBar(container, num, den) {
+      const width = 220;
+      const height = 60;
+      const blockWidth = width / den;
+      
+      let svgHtml = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+      
+      // Draw slices as rectangles
+      for (let i = 0; i < den; i++) {
+        const x = i * blockWidth;
+        const isFilled = i < num;
+        const fill = isFilled ? 'url(#barGrad)' : 'rgba(255, 255, 255, 0.05)';
+        
+        svgHtml += `<rect x="${x}" y="0" width="${blockWidth}" height="${height}" fill="${fill}" stroke="rgba(255, 255, 255, 0.25)" stroke-width="2" rx="4" />`;
+      }
+      
+      // Gradient defs
+      svgHtml += `
+        <defs>
+          <linearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6366f1" />
+            <stop offset="100%" stop-color="#a855f7" />
+          </linearGradient>
+        </defs>
+      </svg>`;
+      
+      container.innerHTML = svgHtml;
+    }
+  </script>
+</body>
+</html>

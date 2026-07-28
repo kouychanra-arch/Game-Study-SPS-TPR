@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ស្វែងរកគូ (Match the Pairs)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .match-card {
+      max-width: 800px;
+      margin: 1.5rem auto;
+      padding: 2rem;
+    }
+
+    .matching-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      margin-top: 2rem;
+      position: relative;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      z-index: 10;
+    }
+
+    .match-item {
+      padding: 1rem 1.25rem;
+      border: 2px solid var(--glass-border);
+      background: var(--glass-bg);
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-align: center;
+      transition: var(--transition);
+      user-select: none;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .match-item:hover:not(.matched) {
+      border-color: rgba(234, 179, 8, 0.4);
+      background: var(--glass-hover);
+      transform: translateY(-2px);
+    }
+
+    .match-item.selected {
+      border-color: #eab308;
+      background: rgba(234, 179, 8, 0.15);
+      box-shadow: 0 0 15px rgba(234, 179, 8, 0.3);
+    }
+
+    .match-item.matched {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      color: #a7f3d0;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .match-item.error {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.2);
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn-active {
+      background: var(--primary-gradient) !important;
+      border-color: transparent !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #eab308;"></div>
+    <div class="blob blob-2" style="background: #0ea5e9;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="glass-panel match-card">
+      
+      <!-- Dataset Tabs -->
+      <div class="tabs">
+        <button class="btn btn-secondary tab-btn-active" id="tab-en-kh" onclick="selectDataset('en-kh')">🇬🇧 ភាសាអង់គ្លេស - ខ្មែរ</button>
+        <button class="btn btn-secondary" id="tab-math" onclick="selectDataset('math')">➕ គណិតវិទ្យា</button>
+        <button class="btn btn-secondary" id="tab-opposites" onclick="selectDataset('opposites')">☯️ ពាក្យផ្ទុយខ្មែរ</button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
+        <div style="font-weight: 600;">ពិន្ទុ៖ <span id="scoreText" style="color: #eab308; font-size: 1.5rem; font-weight: 800;">0</span></div>
+        <button class="btn btn-primary" onclick="resetBoard()" style="padding: 0.5rem 1rem; font-size: 0.9rem;">ផ្លាស់ប្តូរគូថ្មី</button>
+      </div>
+
+      <h3 style="font-size: 1.2rem; font-weight: 700; text-align: center; margin-top: 1rem;">🔗 ចុចលើពាក្យខាងឆ្វេង រួចចុចលើពាក្យត្រូវគ្នានៅខាងស្តាំ</h3>
+
+      <!-- Columns Matching Area -->
+      <div class="matching-container">
+        <!-- Column A -->
+        <div class="column" id="colA">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Column B -->
+        <div class="column" id="colB">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('២០. ស្វែងរកគូ (Match the Pairs)', true);
+      selectDataset('en-kh');
+    });
+
+    const dataset = {
+      'en-kh': [
+        { a: 'Teacher', b: 'គ្រូបង្រៀន' },
+        { a: 'Student', b: 'សិស្សានុសិស្ស' },
+        { a: 'School', b: 'សាលារៀន' },
+        { a: 'Classroom', b: 'បន្ទប់រៀន' },
+        { a: 'Book', b: 'សៀវភៅ' },
+        { a: 'Pencil', b: 'ខ្មៅដៃ' },
+        { a: 'Chalkboard', b: 'ក្តារខៀន' },
+        { a: 'Library', b: 'បណ្ណាល័យ' }
+      ],
+      'math': [
+        { a: '៥ × ៦', b: '៣០' },
+        { a: '១០ - ៧', b: '៣' },
+        { a: '៨ ÷ ២', b: '៤' },
+        { a: '១៥ + ៥', b: '២០' },
+        { a: '៩ × ៩', b: '៨១' },
+        { a: '១០០ ÷ ៥', b: '២០' },
+        { a: '៧ + ៦', b: '១៣' },
+        { a: '៤ × ៤', b: '១៦' }
+      ],
+      'opposites': [
+        { a: 'ធំ (Big)', b: 'តូច (Small)' },
+        { a: 'ខ្ពស់ (High)', b: 'ទាប (Low)' },
+        { a: 'វែង (Long)', b: 'ខ្លី (Short)' },
+        { a: 'ក្តៅ (Hot)', b: 'ត្រជាក់ (Cold)' },
+        { a: 'លឿន (Fast)', b: 'យឺត (Slow)' },
+        { a: 'ខ្មៅ (Black)', b: 'ស (White)' },
+        { a: 'ឆ្ងាយ (Far)', b: 'ជិត (Near)' },
+        { a: 'ធ្ងន់ (Heavy)', b: 'ស្រាល (Light)' }
+      ]
+    };
+
+    let activeKey = 'en-kh';
+    let selectedA = null;
+    let selectedB = null;
+    let matchedCount = 0;
+    let score = 0;
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function selectDataset(key) {
+      playClickSound();
+      activeKey = key;
+
+      document.querySelectorAll('.tabs .btn').forEach(btn => {
+        btn.className = 'btn btn-secondary';
+      });
+      if (key === 'en-kh') document.getElementById('tab-en-kh').classList.add('tab-btn-active');
+      if (key === 'math') document.getElementById('tab-math').classList.add('tab-btn-active');
+      if (key === 'opposites') document.getElementById('tab-opposites').classList.add('tab-btn-active');
+
+      resetBoard();
+    }
+
+    function resetBoard() {
+      selectedA = null;
+      selectedB = null;
+      matchedCount = 0;
+
+      // Select 5 random pairs
+      const pool = [...dataset[activeKey]];
+      const selectedPairs = [];
+      for (let i = 0; i < 5; i++) {
+        if (pool.length === 0) break;
+        const idx = Math.floor(Math.random() * pool.length);
+        selectedPairs.push(pool.splice(idx, 1)[0]);
+      }
+
+      // Shuffle column A and column B independently
+      const itemsA = [...selectedPairs].sort(() => Math.random() - 0.5);
+      const itemsB = [...selectedPairs].sort(() => Math.random() - 0.5);
+
+      // Render Column A
+      const colA = document.getElementById('colA');
+      colA.innerHTML = '';
+      itemsA.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'match-item';
+        div.textContent = item.a;
+        div.dataset.matchVal = item.b; // match column A items to column B values
+        div.addEventListener('click', () => handleSelect('A', div));
+        colA.appendChild(div);
+      });
+
+      // Render Column B
+      const colB = document.getElementById('colB');
+      colB.innerHTML = '';
+      itemsB.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'match-item';
+        div.textContent = item.b;
+        div.dataset.matchVal = item.b;
+        div.addEventListener('click', () => handleSelect('B', div));
+        colB.appendChild(div);
+      });
+    }
+
+    function handleSelect(col, element) {
+      if (element.classList.contains('matched')) return;
+
+      playClickSound();
+
+      if (col === 'A') {
+        document.querySelectorAll('#colA .match-item').forEach(el => el.classList.remove('selected'));
+        selectedA = element;
+        element.classList.add('selected');
+      } else {
+        document.querySelectorAll('#colB .match-item').forEach(el => el.classList.remove('selected'));
+        selectedB = element;
+        element.classList.add('selected');
+      }
+
+      checkMatch();
+    }
+
+    function checkMatch() {
+      if (selectedA && selectedB) {
+        const valA = selectedA.dataset.matchVal;
+        const valB = selectedB.dataset.matchVal;
+
+        if (valA === valB) {
+          // Match
+          selectedA.className = 'match-item matched';
+          selectedB.className = 'match-item matched';
+          
+          score += 10;
+          document.getElementById('scoreText').textContent = toKhmerNum(score);
+          
+          playSuccessSound();
+          showToast('ផ្គូផ្គងជោគជ័យ! 🔗', 'success');
+
+          matchedCount++;
+          if (matchedCount === 5) {
+            setTimeout(() => {
+              triggerConfetti();
+              playSuccessSound();
+              showToast('អបអរសាទរ! អ្នកបានផ្គូផ្គងត្រូវទាំងអស់!', 'success');
+              resetBoard();
+            }, 600);
+          }
+        } else {
+          // Error
+          const tempA = selectedA;
+          const tempB = selectedB;
+          tempA.classList.add('error');
+          tempB.classList.add('error');
+
+          playFailSound();
+          showToast('ខុសហើយ! សាកល្បងម្ដងទៀត', 'error');
+
+          setTimeout(() => {
+            tempA.classList.remove('error', 'selected');
+            tempB.classList.remove('error', 'selected');
+          }, 500);
+        }
+
+        selectedA = null;
+        selectedB = null;
+      }
+    }
+  </script>
+</body>
+</html>

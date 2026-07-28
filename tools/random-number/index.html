@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>កម្មវិធីចាប់លេខចៃដន្យ (Random Number Generator)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .rng-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .rng-container {
+        grid-template-columns: 1.1fr 1fr;
+      }
+    }
+
+    .display-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+      min-height: 380px;
+      position: relative;
+    }
+
+    .giant-number {
+      font-size: 7.5rem;
+      font-weight: 900;
+      line-height: 1;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 1.5rem 0;
+      filter: drop-shadow(0 4px 15px rgba(99, 102, 241, 0.3));
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .giant-number.rolling {
+      animation: rollScale 0.15s infinite alternate;
+    }
+
+    @keyframes rollScale {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      100% { transform: scale(1.05); opacity: 1; }
+    }
+
+    .control-panel {
+      padding: 2rem;
+    }
+
+    .history-box {
+      width: 100%;
+      height: 100px;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 0.75rem;
+      background: rgba(15, 23, 42, 0.4);
+      overflow-y: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-content: flex-start;
+    }
+
+    .history-badge {
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--glass-border);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #6366f1;"></div>
+    <div class="blob blob-2" style="background: #a855f7;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="rng-container">
+      
+      <!-- Giant Number Display -->
+      <section class="glass-panel display-panel">
+        <div style="font-size: 1.1rem; color: var(--text-secondary); font-weight:600;">🎰 លទ្ធផលចាប់លេខ៖</div>
+        
+        <div class="giant-number" id="resultDisplay">?</div>
+        
+        <button class="btn btn-primary" id="rollBtn" onclick="rollNumber()" style="padding: 1rem 3rem; font-size: 1.25rem; font-weight:800;">
+          🎲 ចាប់ផ្តើមវិល
+        </button>
+      </section>
+
+      <!-- Configurations & History -->
+      <section class="glass-panel control-panel">
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem;">⚙️ ការកំណត់ប៉ារ៉ាម៉ែត្រ</h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">តម្លៃតូចបំផុត (Min)</label>
+            <input type="number" id="minInput" class="form-input" value="1">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">តម្លៃធំបំផុត (Max)</label>
+            <input type="number" id="maxInput" class="form-input" value="100">
+          </div>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+          <input type="checkbox" id="allowDuplicate" style="width:18px; height:18px; cursor:pointer;" checked>
+          <label for="allowDuplicate" style="cursor:pointer; font-weight:500; font-size:0.95rem; color:var(--text-secondary);">អនុញ្ញាតឱ្យចាប់លេខជាន់គ្នា (Allow duplicates)</label>
+        </div>
+
+        <h4 style="font-size: 1rem; font-weight:700; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <span>📋 ប្រវត្តិចាប់រួច (History):</span>
+          <button class="btn btn-secondary" onclick="resetHistory()" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">សម្អាតប្រវត្តិ</button>
+        </h4>
+        <div class="history-box" id="historyContainer">
+          <!-- History badges populated dynamically -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('១៤. កម្មវិធីចាប់លេខចៃដន្យ', true);
+    });
+
+    let history = [];
+    let rollingInterval = null;
+    let isRolling = false;
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function rollNumber() {
+      if (isRolling) return;
+
+      playClickSound();
+
+      const min = parseInt(document.getElementById('minInput').value);
+      const max = parseInt(document.getElementById('maxInput').value);
+      const allowDup = document.getElementById('allowDuplicate').checked;
+
+      if (isNaN(min) || isNaN(max)) {
+        showToast('សូមបំពេញតម្លៃ Min និង Max ឱ្យបានត្រឹមត្រូវ!', 'error');
+        playFailSound();
+        return;
+      }
+      if (min >= max) {
+        showToast('តម្លៃ Min ត្រូវតែតូចជាងតម្លៃ Max!', 'error');
+        playFailSound();
+        return;
+      }
+
+      // Check duplicate constraints
+      const rangeSize = max - min + 1;
+      if (!allowDup && history.length >= rangeSize) {
+        showToast('បានចាប់អស់លេខក្នុងជួរនេះហើយ! សូមសម្អាតប្រវត្តិ។', 'error');
+        playFailSound();
+        return;
+      }
+
+      isRolling = true;
+      const display = document.getElementById('resultDisplay');
+      display.classList.add('rolling');
+      
+      let tempVal = 0;
+      let ticks = 0;
+      
+      // Roll effect (15 ticks, every 80ms)
+      rollingInterval = setInterval(() => {
+        tempVal = Math.floor(Math.random() * (max - min + 1)) + min;
+        display.textContent = toKhmerNum(tempVal);
+        playClickSound();
+        ticks++;
+        
+        if (ticks >= 15) {
+          clearInterval(rollingInterval);
+          finalizeRoll(min, max, allowDup);
+        }
+      }, 80);
+    }
+
+    function finalizeRoll(min, max, allowDup) {
+      let finalVal = 0;
+      let attempts = 0;
+      
+      // Select number
+      do {
+        finalVal = Math.floor(Math.random() * (max - min + 1)) + min;
+        attempts++;
+        // Safety exit
+        if (attempts > 500) break;
+      } while (!allowDup && history.includes(finalVal));
+
+      history.push(finalVal);
+      
+      const display = document.getElementById('resultDisplay');
+      display.classList.remove('rolling');
+      display.textContent = toKhmerNum(finalVal);
+
+      // Render history
+      renderHistory();
+      
+      playSuccessSound();
+      triggerConfetti();
+      isRolling = false;
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyContainer');
+      container.innerHTML = '';
+      
+      history.forEach(num => {
+        const badge = document.createElement('div');
+        badge.className = 'history-badge';
+        badge.textContent = toKhmerNum(num);
+        container.appendChild(badge);
+      });
+      // Scroll to bottom
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function resetHistory() {
+      playClickSound();
+      history = [];
+      renderHistory();
+      document.getElementById('resultDisplay').textContent = '?';
+      showToast('បានសម្អាតប្រវត្តិចាប់លេខរួចរាល់!', 'success');
+    }
+  </script>
+</body>
+</html>

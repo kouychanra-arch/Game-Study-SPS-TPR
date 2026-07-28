@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>នាឡិការាប់ថយក្រោយ (Classroom Timer)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .timer-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .timer-container {
+        grid-template-columns: 1.2fr 1fr;
+      }
+    }
+
+    .visual-timer-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+      min-height: 400px;
+    }
+
+    .timer-svg-box {
+      position: relative;
+      width: 240px;
+      height: 240px;
+      margin-bottom: 1.5rem;
+    }
+
+    .timer-svg-circle {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.05);
+      stroke-width: 10px;
+    }
+
+    .timer-progress-circle {
+      fill: none;
+      stroke: url(#timerGrad);
+      stroke-width: 10px;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .timer-digital-display {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+
+    .controls-btn-row {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .preset-btn {
+      padding: 1rem;
+      font-weight: 700;
+      font-family: var(--font-khmer);
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: white;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .preset-btn:hover {
+      background: var(--glass-hover);
+      border-color: rgba(139, 92, 246, 0.4);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #8b5cf6;"></div>
+    <div class="blob blob-2" style="background: #3b82f6;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="timer-container">
+      
+      <!-- Visual Timer Panel -->
+      <section class="glass-panel visual-timer-panel">
+        <div class="timer-svg-box">
+          <svg width="240" height="240" viewBox="0 0 200 200">
+            <!-- Background base circle -->
+            <circle cx="100" cy="100" r="90" class="timer-svg-circle" />
+            
+            <!-- Dynamic running circle -->
+            <!-- Stroke circumference: 2 * Math.PI * r = 2 * 3.14159 * 90 = 565.48 -->
+            <circle cx="100" cy="100" r="90" class="timer-progress-circle" 
+                    stroke-dasharray="565.48" stroke-dashoffset="0" id="progressRing" />
+            
+            <defs>
+              <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#8b5cf6" />
+                <stop offset="100%" stop-color="#3b82f6" />
+              </linearGradient>
+            </defs>
+          </svg>
+
+          <!-- Numeric timer -->
+          <div class="timer-digital-display" id="timeDisplay">០០:០០</div>
+        </div>
+
+        <!-- Start/Pause/Reset buttons -->
+        <div class="controls-btn-row">
+          <button class="btn btn-success" id="startBtn" onclick="toggleTimer()" style="flex-grow:1;">▶️ ចាប់ផ្តើម</button>
+          <button class="btn btn-danger" onclick="resetTimer()" style="flex-grow:1;">⏹️ កំណត់ឡើងវិញ</button>
+        </div>
+      </section>
+
+      <!-- Preset Custom Config Panel -->
+      <section class="glass-panel" style="padding: 2rem;">
+        <h3 style="font-size: 1.25rem; font-weight:700; margin-bottom: 1.5rem;">⏱️ កំណត់ពេលវេលា</h3>
+        
+        <!-- Presets -->
+        <div class="preset-grid" style="margin-bottom: 2rem;">
+          <button class="preset-btn" onclick="setPreset(60)">⏱️ ១ នាទី (1m)</button>
+          <button class="preset-btn" onclick="setPreset(120)">⏱️ ២ នាទី (2m)</button>
+          <button class="preset-btn" onclick="setPreset(300)">⏱️ ៥ នាទី (5m)</button>
+          <button class="preset-btn" onclick="setPreset(600)">⏱️ ១០ នាទី (10m)</button>
+        </div>
+
+        <h4 style="font-size: 1rem; font-weight:700; margin-bottom: 1rem;">🔧 កំណត់ដោយខ្លួនឯង៖</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">នាទី (Minutes)</label>
+            <input type="number" id="customMinutes" class="form-input" min="0" max="99" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">វិនាទី (Seconds)</label>
+            <input type="number" id="customSeconds" class="form-input" min="0" max="59" value="0">
+          </div>
+        </div>
+
+        <button class="btn btn-secondary" onclick="applyCustomTime()" style="width: 100%;">អនុវត្តពេលកំណត់</button>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('១៥. នាឡិការាប់ថយក្រោយ (Classroom Timer)', true);
+      updateDisplay();
+    });
+
+    let totalDuration = 60; // default 1 minute
+    let timeRemaining = 60;
+    let timerState = 'paused'; // running, paused
+    let timerInterval = null;
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function updateDisplay() {
+      // Formats digital clock
+      const m = Math.floor(timeRemaining / 60);
+      const s = timeRemaining % 60;
+      
+      const mmStr = m.toString().padStart(2, '0');
+      const ssStr = s.toString().padStart(2, '0');
+
+      document.getElementById('timeDisplay').textContent = `${toKhmerNum(mmStr)}:${toKhmerNum(ssStr)}`;
+
+      // SVG Ring fill calculation
+      // Stroke circumference = 565.48
+      const maxOffset = 565.48;
+      const progressRatio = timeRemaining / totalDuration;
+      // Subtracting ratio offset from maxOffset (so full duration has 0 offset, 0 time remaining has maxOffset)
+      const currentOffset = maxOffset * (1 - progressRatio);
+      
+      const ring = document.getElementById('progressRing');
+      ring.style.strokeDashoffset = currentOffset;
+    }
+
+    function setPreset(seconds) {
+      playClickSound();
+      if (timerState === 'running') toggleTimer();
+      totalDuration = seconds;
+      timeRemaining = seconds;
+      updateDisplay();
+      showToast('បានកំណត់ Preset ជោគជ័យ!', 'success');
+    }
+
+    function applyCustomTime() {
+      playClickSound();
+      const mins = parseInt(document.getElementById('customMinutes').value) || 0;
+      const secs = parseInt(document.getElementById('customSeconds').value) || 0;
+
+      const total = mins * 60 + secs;
+      if (total <= 0) {
+        showToast('សូមកំណត់រយៈពេលឱ្យបានត្រឹមត្រូវ!', 'error');
+        playFailSound();
+        return;
+      }
+
+      if (timerState === 'running') toggleTimer();
+      totalDuration = total;
+      timeRemaining = total;
+      updateDisplay();
+      showToast('បានកំណត់ពេលផ្ទាល់ខ្លួន!', 'success');
+    }
+
+    function toggleTimer() {
+      playClickSound();
+      const startBtn = document.getElementById('startBtn');
+
+      if (timerState === 'paused') {
+        // Start running
+        timerState = 'running';
+        startBtn.textContent = '⏸️ បញ្ឈប់បណ្តោះអាសន្ន';
+        startBtn.className = 'btn btn-secondary';
+
+        timerInterval = setInterval(() => {
+          timeRemaining--;
+          updateDisplay();
+
+          // Last 5 seconds tick sound
+          if (timeRemaining <= 5 && timeRemaining > 0) {
+            playTickSound();
+          }
+
+          if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            triggerAlarm();
+          }
+        }, 1000);
+      } else {
+        // Pause running
+        timerState = 'paused';
+        startBtn.textContent = '▶️ បន្តដំណើរការ';
+        startBtn.className = 'btn btn-success';
+        clearInterval(timerInterval);
+      }
+    }
+
+    function resetTimer() {
+      playClickSound();
+      if (timerState === 'running') {
+        toggleTimer();
+      }
+      timeRemaining = totalDuration;
+      updateDisplay();
+      showToast('បានកំណត់ពេលវេលាឡើងវិញ!', 'success');
+    }
+
+    // Synthesize tick sound for countdown
+    function playTickSound() {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1000, ctx.currentTime);
+        
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.06);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    // Alarm sound synthesizer
+    function triggerAlarm() {
+      timerState = 'paused';
+      const startBtn = document.getElementById('startBtn');
+      startBtn.textContent = '▶️ ចាប់ផ្តើម';
+      startBtn.className = 'btn btn-success';
+      
+      showToast('⌛ អស់ម៉ោងហើយ! (Time\'s up!)', 'error');
+      triggerConfetti();
+
+      // Sound Alarm synth
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        
+        // Rhythmic ringing chiming sound (5 rings)
+        for (let i = 0; i < 5; i++) {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+          
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(ctx.destination);
+          
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(880, now + i * 0.5); // A5
+          
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(440, now + i * 0.5); // A4
+
+          gain.gain.setValueAtTime(0, now + i * 0.5);
+          gain.gain.linearRampToValueAtTime(0.3, now + i * 0.5 + 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.5 + 0.45);
+          
+          osc1.start(now + i * 0.5);
+          osc1.stop(now + i * 0.5 + 0.5);
+          
+          osc2.start(now + i * 0.5);
+          osc2.stop(now + i * 0.5 + 0.5);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ឃ្លាំងទិន្នន័យសិស្ស (Student Database)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .db-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    @media (min-width: 992px) {
+      .db-container {
+        grid-template-columns: 280px 1fr;
+      }
+    }
+
+    .stats-card {
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .stats-icon {
+      font-size: 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.5rem;
+      border-radius: 12px;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stats-num {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .db-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    /* Gender Badge */
+    .gender-badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    .gender-male {
+      background: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .gender-female {
+      background: rgba(236, 72, 153, 0.2);
+      color: #fbcfe8;
+      border: 1px solid rgba(236, 72, 153, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    
+    <div class="db-container" style="margin-top: 1rem;">
+      <!-- Stats Sidebar -->
+      <aside class="sidebar-stats">
+        <div class="glass-panel stats-card">
+          <div class="stats-icon">👨‍🎓</div>
+          <div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">សិស្សសរុប</div>
+            <div class="stats-num" id="totalStudents">0</div>
+          </div>
+        </div>
+        
+        <div class="glass-panel stats-card">
+          <div class="stats-icon">👦</div>
+          <div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">សិស្សប្រុស</div>
+            <div class="stats-num" id="totalMale">0</div>
+          </div>
+        </div>
+
+        <div class="glass-panel stats-card">
+          <div class="stats-icon">👧</div>
+          <div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">សិស្សស្រី</div>
+            <div class="stats-num" id="totalFemale">0</div>
+          </div>
+        </div>
+
+        <div class="glass-panel stats-card">
+          <div class="stats-icon">📊</div>
+          <div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">ពិន្ទុមធ្យមភាគ</div>
+            <div class="stats-num" id="avgScore">0</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Database Panel -->
+      <section class="glass-panel" style="padding: 2rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1.5rem; font-weight: 700;">📋 បញ្ជីរាយនាមសិស្ស និងពិន្ទុ</h2>
+        
+        <!-- Actions & Import/Export -->
+        <div class="db-actions">
+          <button class="btn btn-primary" onclick="openAddModal()">➕ បន្ថែមសិស្ស</button>
+          
+          <button class="btn btn-success" onclick="exportToExcel()">📥 នាំចេញជា Excel</button>
+          
+          <label class="btn btn-secondary" style="cursor: pointer; position: relative;">
+            📤 បញ្ចូលពី Excel (Import)
+            <input type="file" id="excelInput" accept=".xlsx, .xls" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+          </label>
+
+          <button class="btn btn-secondary" onclick="downloadTemplate()">📄 ទាញយកគំរូ Excel</button>
+          <button class="btn btn-danger" onclick="clearDatabase()">🗑️ សម្អាតទិន្នន័យ</button>
+        </div>
+
+        <!-- Search Table -->
+        <div class="form-group" style="max-width: 350px;">
+          <input type="text" id="dbSearch" class="form-input" placeholder="🔍 ស្វែងរកឈ្មោះសិស្ស...">
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="glass-table">
+            <thead>
+              <tr>
+                <th style="width: 80px;">ល.រ</th>
+                <th>ឈ្មោះសិស្ស</th>
+                <th style="width: 120px;">ភេទ</th>
+                <th style="width: 120px;">ពិន្ទុសរុប</th>
+                <th style="width: 180px; text-align: center;">សកម្មភាព</th>
+              </tr>
+            </thead>
+            <tbody id="studentTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Add/Edit Student Modal -->
+  <div class="modal-backdrop" id="studentModal">
+    <div class="modal-content glass-panel" style="background: rgba(15, 23, 42, 0.95);">
+      <h3 id="modalTitle" style="font-size: 1.25rem; margin-bottom: 1.5rem; font-weight: 700;">➕ បន្ថែមសិស្សថ្មី</h3>
+      <form id="studentForm" onsubmit="saveStudentForm(event)">
+        <input type="hidden" id="studentIndex">
+        
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះសិស្ស</label>
+          <input type="text" id="studName" class="form-input" required placeholder="វាយបញ្ចូលឈ្មោះ...">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">ភេទ</label>
+          <select id="studGender" class="form-input" required>
+            <option value="ប្រុស">ប្រុស</option>
+            <option value="ស្រី">ស្រី</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ពិន្ទុសរុប</label>
+          <input type="number" id="studScore" class="form-input" required min="0" max="100" placeholder="ពិន្ទុពី ០ ដល់ ១០០">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">បោះបង់</button>
+          <button type="submit" class="btn btn-primary">រក្សាទុក</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../assets/sheetjs/xlsx.full.min.js"></script>
+  <script src="../../shared.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

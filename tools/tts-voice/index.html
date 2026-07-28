@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>មុខងារអានអត្ថបទជាសំឡេង (Text-to-Speech)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .tts-container {
+      max-width: 700px;
+      margin: 1.5rem auto;
+      padding: 2rem;
+    }
+
+    .tts-textarea {
+      width: 100%;
+      height: 180px;
+      font-family: var(--font-khmer);
+      padding: 0.75rem;
+      background: rgba(15, 23, 42, 0.6);
+      color: white;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      resize: none;
+      font-size: 1.1rem;
+      margin-bottom: 1.25rem;
+      line-height: 1.6;
+    }
+
+    .tts-textarea:focus {
+      outline: none;
+      border-color: #10b981;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (min-width: 576px) {
+      .config-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .info-note {
+      padding: 1rem;
+      border-radius: 10px;
+      background: rgba(234, 179, 8, 0.1);
+      border: 1px solid rgba(234, 179, 8, 0.25);
+      color: #fef08a;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #10b981;"></div>
+    <div class="blob blob-2" style="background: #0ea5e9;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="glass-panel tts-container">
+      <h3 style="font-size: 1.3rem; font-weight:700; margin-bottom: 1.5rem; text-align: center;">🗣️ មុខងារអានអត្ថបទជាសំឡេង (Text-to-Speech)</h3>
+
+      <textarea id="ttsInput" class="tts-textarea" placeholder="សរសេរអត្ថបទនៅទីនេះ ដើម្បីឱ្យកម្មវិធីអាន..."></textarea>
+
+      <!-- Configuration Settings -->
+      <div class="config-grid">
+        <div class="form-group">
+          <label class="form-label">ភាសាអាន (Language)</label>
+          <select id="langSelect" class="form-input" onchange="filterVoices()">
+            <option value="km-KH">🇰🇭 ភាសាខ្មែរ (Khmer)</option>
+            <option value="en-US" selected>🇺🇸 ភាសាអង់គ្លេស (English)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">សំឡេងអាន (Voice)</label>
+          <select id="voiceSelect" class="form-input">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem;">
+            <span>ល្បឿនអាន (Speech Rate):</span>
+            <span id="rateVal">1.0x</span>
+          </div>
+          <input type="range" id="rateSlider" min="0.5" max="2.0" step="0.1" value="1.0" style="width:100%; cursor:pointer;" oninput="updateRateLabel(this.value)">
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="control-row">
+        <button class="btn btn-success" onclick="speak()" style="flex-grow: 1;">🔊 ចាប់ផ្តើមអាន (Speak)</button>
+        <button class="btn btn-secondary" onclick="pause()" id="pauseBtn">⏸️ ផ្អាក (Pause)</button>
+        <button class="btn btn-danger" onclick="stop()">⏹️ ឈប់ (Stop)</button>
+      </div>
+
+      <!-- Warning fallback notes -->
+      <div class="info-note">
+        💡 <strong>ចំណាំ៖</strong> មុខងារបញ្ចេញសំឡេងភាសាខ្មែរ (Khmer Speech Synthesis) អាស្រ័យលើប្រព័ន្ធប្រតិបត្តិការ និងកម្មវិធីរុករក (Browser) របស់លោកអ្នក។ ប្រសិនបើពុំឮសំឡេងអានភាសាខ្មែរទេ សូមប្រាកដថាឧបករណ៍របស់អ្នកបានដំឡើងកញ្ចប់ភាសាខ្មែរ (Khmer Speech Engine)។
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    let synth = window.speechSynthesis;
+    let voices = [];
+    let utterance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('២១. មុខងារអានអត្ថបទខ្មែរ/អង់គ្លេសជាសំឡេង (Text-to-Speech)', true);
+      
+      // Load default values based on selected language
+      document.getElementById('ttsInput').value = 'Welcome to the educational hub for teachers and students!';
+      
+      // Load voices when available
+      if (synth) {
+        loadVoices();
+        if (synth.onvoiceschanged !== undefined) {
+          synth.onvoiceschanged = loadVoices;
+        }
+      } else {
+        showToast('សុំទោស! Browser របស់អ្នកមិនគាំទ្រ TTS ឡើយ។', 'error');
+      }
+
+      // Add listener to text input helper
+      document.getElementById('langSelect').addEventListener('change', (e) => {
+        if (e.target.value === 'km-KH') {
+          document.getElementById('ttsInput').value = 'សូមស្វាគមន៍មកកាន់មជ្ឈមណ្ឌលឧបករណ៍អប់រំ និងល្បែងសិក្សាសម្រាប់គ្រូនិងសិស្សបឋមសិក្សា!';
+        } else {
+          document.getElementById('ttsInput').value = 'Welcome to the educational hub for teachers and students!';
+        }
+      });
+    });
+
+    function loadVoices() {
+      voices = synth.getVoices();
+      filterVoices();
+    }
+
+    function filterVoices() {
+      const selectedLang = document.getElementById('langSelect').value;
+      const voiceSelect = document.getElementById('voiceSelect');
+      voiceSelect.innerHTML = '';
+
+      // Filter voices matching current language selection
+      const filtered = voices.filter(v => v.lang.startsWith(selectedLang.split('-')[0]));
+
+      if (filtered.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '--- ប្រើប្រាស់សំឡេងលំនាំដើមរបស់ម៉ាស៊ីន ---';
+        voiceSelect.appendChild(opt);
+      } else {
+        filtered.forEach(voice => {
+          const opt = document.createElement('option');
+          opt.value = voice.name;
+          opt.textContent = `${voice.name} (${voice.lang})`;
+          voiceSelect.appendChild(opt);
+        });
+      }
+    }
+
+    function updateRateLabel(val) {
+      document.getElementById('rateVal').textContent = val + 'x';
+    }
+
+    function speak() {
+      playClickSound();
+      
+      if (!synth) return;
+
+      // Stop ongoing speech
+      if (synth.speaking) {
+        synth.cancel();
+      }
+
+      const text = document.getElementById('ttsInput').value.trim();
+      if (!text) {
+        showToast('សូមបញ្ចូលអត្ថបទសម្រាប់អាន!', 'error');
+        playFailSound();
+        return;
+      }
+
+      utterance = new SpeechSynthesisUtterance(text);
+
+      // Apply Voice
+      const selectedVoiceName = document.getElementById('voiceSelect').value;
+      const selectedVoice = voices.find(v => v.name === selectedVoiceName);
+      if (selectedVoice) utterance.voice = selectedVoice;
+
+      // Apply Lang
+      utterance.lang = document.getElementById('langSelect').value;
+
+      // Apply Rate
+      const rate = parseFloat(document.getElementById('rateSlider').value);
+      utterance.rate = rate;
+
+      utterance.onend = () => {
+        document.getElementById('pauseBtn').textContent = '⏸️ ផ្អាក (Pause)';
+        showToast('បានបញ្ចប់ការអាន!', 'success');
+      };
+
+      utterance.onerror = (e) => {
+        console.error(e);
+        showToast('ការអានសំឡេងមានកំហុស!', 'error');
+      };
+
+      synth.speak(utterance);
+      showToast('កំពុងអានអត្ថបទ...', 'success');
+    }
+
+    function pause() {
+      playClickSound();
+      if (!synth) return;
+
+      const pauseBtn = document.getElementById('pauseBtn');
+
+      if (synth.speaking && !synth.paused) {
+        synth.pause();
+        pauseBtn.textContent = '▶️ បន្តអាន (Resume)';
+        showToast('បានផ្អាកការអាន!', 'info');
+      } else if (synth.paused) {
+        synth.resume();
+        pauseBtn.textContent = '⏸️ ផ្អាក (Pause)';
+        showToast('កំពុងបន្តអាន...', 'success');
+      }
+    }
+
+    function stop() {
+      playClickSound();
+      if (!synth) return;
+      
+      synth.cancel();
+      document.getElementById('pauseBtn').textContent = '⏸️ ផ្អាក (Pause)';
+      showToast('បានបញ្ឈប់ការអាន!', 'info');
+    }
+  </script>
+</body>
+</html>

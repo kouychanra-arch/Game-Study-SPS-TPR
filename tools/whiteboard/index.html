@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ក្តារខៀនឌីជីថល (Digital Whiteboard)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .whiteboard-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 992px) {
+      .whiteboard-container {
+        grid-template-columns: 240px 1fr;
+      }
+    }
+
+    .tool-bar {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: row;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    @media (min-width: 992px) {
+      .tool-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
+    /* Green chalk board canvas styling */
+    .canvas-wrapper {
+      position: relative;
+      border: 6px solid #b45309; /* wooden board frame */
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      background: #064e3b; /* blackboard green */
+      width: 100%;
+      height: 500px;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .color-swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+    }
+
+    .color-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid white;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      transition: transform 0.15s;
+    }
+
+    .color-swatch:hover, .color-swatch.active {
+      transform: scale(1.15);
+      box-shadow: 0 0 8px rgba(255,255,255,0.8);
+    }
+
+    .tool-mode-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #14b8a6;"></div>
+    <div class="blob blob-2" style="background: #a855f7;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="whiteboard-container">
+      
+      <!-- Side Tools -->
+      <section class="glass-panel tool-bar">
+        <h3 style="font-size: 1.15rem; font-weight:700; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">🖌️ របារឧបករណ៍គូរ</h3>
+
+        <!-- Mode Select -->
+        <div class="tool-mode-row">
+          <button class="btn btn-primary" id="modeDraw" onclick="setMode('draw')" style="padding: 0.5rem; font-size: 0.9rem;">✏️ គូរ</button>
+          <button class="btn btn-secondary" id="modeErase" onclick="setMode('erase')" style="padding: 0.5rem; font-size: 0.9rem;">🧼 ជ័រលុប</button>
+        </div>
+
+        <!-- Size Slider -->
+        <div style="margin-top: 0.5rem;">
+          <div style="display:flex; justify-content:space-between; font-size: 0.85rem; font-weight:600; margin-bottom: 0.25rem;">
+            <span>ទំហំជក់/ជ័រលុប:</span>
+            <span id="brushSizeVal">5</span>
+          </div>
+          <input type="range" id="brushSize" min="1" max="40" value="5" style="width:100%; cursor:pointer;" oninput="updateBrushSize(this.value)">
+        </div>
+
+        <!-- Colors Selection -->
+        <div style="margin-top: 0.5rem;">
+          <div style="font-size: 0.85rem; font-weight:600; margin-bottom: 0.25rem;">ជ្រើសរើសពណ៌៖</div>
+          <div class="color-swatches">
+            <!-- White chalk -->
+            <div class="color-swatch active" style="background: #ffffff;" onclick="setBrushColor('#ffffff', this)"></div>
+            <div class="color-swatch" style="background: #ef4444;" onclick="setBrushColor('#ef4444', this)"></div>
+            <div class="color-swatch" style="background: #3b82f6;" onclick="setBrushColor('#3b82f6', this)"></div>
+            <div class="color-swatch" style="background: #10b981;" onclick="setBrushColor('#10b981', this)"></div>
+            <div class="color-swatch" style="background: #eab308;" onclick="setBrushColor('#eab308', this)"></div>
+            <div class="color-swatch" style="background: #a855f7;" onclick="setBrushColor('#a855f7', this)"></div>
+            <div class="color-swatch" style="background: #f97316;" onclick="setBrushColor('#f97316', this)"></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+            <span style="font-size:0.8rem; color:var(--text-secondary);">ពណ៌ផ្ទាល់ខ្លួន:</span>
+            <input type="color" id="customColor" onchange="setCustomColor(this.value)" style="width:30px; height:30px; cursor:pointer; border:none; background:transparent;">
+          </div>
+        </div>
+
+        <!-- Utility Buttons -->
+        <button class="btn btn-danger" onclick="clearCanvas()" style="width:100%; margin-top: 1rem;">🧹 សម្អាតក្តារ</button>
+        <button class="btn btn-success" onclick="downloadDrawing()" style="width:100%;">💾 រក្សាទុករូបភាព</button>
+      </section>
+
+      <!-- Drawing Canvas Frame -->
+      <section class="canvas-wrapper">
+        <canvas id="whiteboardCanvas"></canvas>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    let canvas, ctx;
+    let isDrawing = false;
+    let brushColor = '#ffffff';
+    let brushSize = 5;
+    let toolMode = 'draw'; // draw or erase
+    let lastX = 0;
+    let lastY = 0;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('១៨. ក្តារខៀនឌីជីថល (Whiteboard)', true);
+      
+      canvas = document.getElementById('whiteboardCanvas');
+      ctx = canvas.getContext('2d');
+
+      // Resize canvas to fit container bounds
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      // Desktop Mouse Listeners
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseout', stopDrawing);
+
+      // Mobile Touch Listeners (prevent scrolling when drawing)
+      canvas.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        startDrawing(touch);
+        e.preventDefault();
+      });
+      canvas.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        draw(touch);
+        e.preventDefault();
+      }, { passive: false });
+      canvas.addEventListener('touchend', (e) => {
+        stopDrawing();
+        e.preventDefault();
+      });
+    });
+
+    function resizeCanvas() {
+      // Keep canvas drawing state intact after sizing
+      const tempImage = canvas.toDataURL();
+      
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      // Restore blackboard background fill
+      ctx.fillStyle = '#064e3b';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Reload drawing contents
+      const img = new Image();
+      img.onload = function() {
+        ctx.drawImage(img, 0, 0);
+      };
+      img.src = tempImage;
+
+      // Re-initialize brush values
+      updateBrushStyle();
+    }
+
+    function updateBrushStyle() {
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      if (toolMode === 'draw') {
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+      } else {
+        // Eraser replaces with chalk board background green color
+        ctx.strokeStyle = '#064e3b';
+        ctx.lineWidth = brushSize * 2.5; // larger size for eraser
+      }
+    }
+
+    function setMode(mode) {
+      playClickSound();
+      toolMode = mode;
+      
+      document.getElementById('modeDraw').className = 'btn btn-secondary';
+      document.getElementById('modeErase').className = 'btn btn-secondary';
+
+      if (mode === 'draw') {
+        document.getElementById('modeDraw').className = 'btn btn-primary';
+        showToast('ប្តូរទៅ៖ ជក់សរសេរ', 'info');
+      } else {
+        document.getElementById('modeErase').className = 'btn btn-primary';
+        showToast('ប្តូរទៅ៖ ជ័រលុបក្តារ', 'info');
+      }
+
+      updateBrushStyle();
+    }
+
+    function updateBrushSize(size) {
+      brushSize = parseInt(size);
+      document.getElementById('brushSizeVal').textContent = size;
+      updateBrushStyle();
+    }
+
+    function setBrushColor(color, element) {
+      playClickSound();
+      brushColor = color;
+      
+      document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
+      if (element) element.classList.add('active');
+
+      if (toolMode !== 'draw') setMode('draw');
+      
+      updateBrushStyle();
+    }
+
+    function setCustomColor(color) {
+      brushColor = color;
+      document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
+      if (toolMode !== 'draw') setMode('draw');
+      updateBrushStyle();
+    }
+
+    // Canvas drawing algorithms
+    function startDrawing(e) {
+      isDrawing = true;
+      const coords = getCanvasCoords(e);
+      lastX = coords.x;
+      lastY = coords.y;
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+
+      const coords = getCanvasCoords(e);
+
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(coords.x, coords.y);
+      ctx.stroke();
+
+      lastX = coords.x;
+      lastY = coords.y;
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+    }
+
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      // Calculate coordinates scaling based on canvas width attribute vs client offset
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      return { x, y };
+    }
+
+    function clearCanvas() {
+      playClickSound();
+      if (confirm('តើអ្នកពិតជាចង់សម្អាតលុបគំនូរលើក្តារទាំងអស់មែនទេ?')) {
+        ctx.fillStyle = '#064e3b';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        showToast('បានសម្អាតក្តារខៀនរួចរាល់!', 'success');
+      }
+    }
+
+    function downloadDrawing() {
+      playClickSound();
+      const link = document.createElement('a');
+      link.download = 'whiteboard_drawing.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+      showToast('បានរក្សាទុករូបភាពជោគជ័យ!', 'success');
+      playSuccessSound();
+    }
+  </script>
+</body>
+</html>

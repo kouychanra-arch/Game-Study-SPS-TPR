@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ទាយម៉ោង (Guess the Time)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .game-card {
+      max-width: 700px;
+      margin: 1.5rem auto;
+      padding: 2rem;
+    }
+
+    .clock-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+      align-items: center;
+    }
+
+    @media (min-width: 768px) {
+      .clock-layout {
+        grid-template-columns: 1.1fr 1fr;
+      }
+    }
+
+    .clock-display {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+    }
+
+    /* SVG Clock Face Styling */
+    .clock-face {
+      fill: rgba(255, 255, 255, 0.05);
+      stroke: var(--glass-border);
+      stroke-width: 6px;
+    }
+
+    .clock-center {
+      fill: #a855f7;
+    }
+
+    .hand-hour {
+      stroke: #ffffff;
+      stroke-width: 6px;
+      stroke-linecap: round;
+    }
+
+    .hand-minute {
+      stroke: #ec4899;
+      stroke-width: 4px;
+      stroke-linecap: round;
+    }
+
+    .clock-tick {
+      stroke: var(--text-secondary);
+      stroke-width: 2px;
+    }
+
+    .clock-label {
+      font-size: 14px;
+      font-family: var(--font-khmer);
+      font-weight: 700;
+      fill: #ffffff;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .choices-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .choice-btn {
+      padding: 1rem 1.25rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: white;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: var(--font-khmer);
+      text-align: left;
+    }
+
+    .choice-btn:hover {
+      background: var(--glass-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.2);
+      border-color: rgba(168, 85, 247, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #a855f7;"></div>
+    <div class="blob blob-2" style="background: #ec4899;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="glass-panel game-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div style="font-size: 1.1rem; font-weight: 600;">ពិន្ទុ៖ <span id="scoreText" style="color: #a855f7; font-size: 1.5rem; font-weight: 800;">0</span></div>
+        <button class="btn btn-secondary" onclick="generateNewTime()" style="padding: 0.5rem 1rem; font-size: 0.9rem;">ផ្លាស់ប្តូរម៉ោងថ្មី</button>
+      </div>
+
+      <h3 style="font-size: 1.25rem; font-weight: 700; text-align: center; margin-bottom: 1rem;">⏰ សូមពិនិត្យទ្រនិចនាឡិកា ហើយជ្រើសរើសម៉ោងឱ្យបានត្រឹមត្រូវ</h3>
+
+      <div class="clock-layout">
+        <!-- SVG Clock Panel -->
+        <div class="clock-display">
+          <svg width="240" height="240" viewBox="0 0 200 200" id="clockSvg">
+            <!-- Drawn dynamically in JS -->
+          </svg>
+        </div>
+
+        <!-- Choices Panel -->
+        <div style="display: flex; flex-direction: column; justify-content: center;">
+          <div class="choices-list" id="choicesContainer">
+            <!-- Choice buttons -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('៥. ទាយម៉ោង (Guess the Time)', true);
+      generateNewTime();
+    });
+
+    let score = 0;
+    let currentHour = 12;
+    let currentMinute = 0;
+    let correctTimeStr = '';
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function formatTimeKhmer(h, m) {
+      const hStr = toKhmerNum(h);
+      const mStr = m === 0 ? 'គត់' : toKhmerNum(m) + ' នាទី';
+      return `ម៉ោង ${hStr} និង ${mStr}`;
+    }
+
+    function formatTimeDigital(h, m) {
+      const hh = h.toString().padStart(2, '0');
+      const mm = m.toString().padStart(2, '0');
+      return `${toKhmerNum(hh)}:${toKhmerNum(mm)}`;
+    }
+
+    function generateNewTime() {
+      // Pick random hour: 1 to 12
+      currentHour = Math.floor(Math.random() * 12) + 1;
+      
+      // Pick random minute in increments of 5 minutes: 0, 5, 10... 55
+      const minutesArr = [0, 15, 30, 45, 10, 20, 25, 35, 40, 50, 55];
+      currentMinute = minutesArr[Math.floor(Math.random() * minutesArr.length)];
+
+      correctTimeStr = formatTimeKhmer(currentHour, currentMinute);
+
+      // Render Clock Hands
+      drawClock(currentHour, currentMinute);
+
+      // Generate choices
+      const choices = new Set();
+      choices.add(correctTimeStr);
+
+      while (choices.size < 4) {
+        const fakeHour = Math.floor(Math.random() * 12) + 1;
+        const fakeMinute = minutesArr[Math.floor(Math.random() * minutesArr.length)];
+        choices.add(formatTimeKhmer(fakeHour, fakeMinute));
+      }
+
+      // Render Choices
+      const choicesArr = Array.from(choices).sort(() => Math.random() - 0.5);
+      const container = document.getElementById('choicesContainer');
+      container.innerHTML = '';
+
+      choicesArr.forEach(choice => {
+        // Find corresponding numeric time to show on button as secondary hint
+        let timeLabel = choice;
+        
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.innerHTML = `<span>🔔</span> ${choice}`;
+        btn.addEventListener('click', () => submitAnswer(choice));
+        container.appendChild(btn);
+      });
+    }
+
+    function drawClock(h, m) {
+      const svg = document.getElementById('clockSvg');
+      svg.innerHTML = '';
+
+      // Draw Face base
+      const face = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      face.setAttribute('cx', '100');
+      face.setAttribute('cy', '100');
+      face.setAttribute('r', '90');
+      face.setAttribute('class', 'clock-face');
+      svg.appendChild(face);
+
+      // Draw hours labels
+      for (let i = 1; i <= 12; i++) {
+        const angle = i * 30 * Math.PI / 180;
+        const x = 100 + 72 * Math.sin(angle);
+        const y = 100 - 72 * Math.cos(angle);
+        
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', x.toString());
+        label.setAttribute('y', y.toString());
+        label.setAttribute('class', 'clock-label');
+        label.textContent = toKhmerNum(i);
+        svg.appendChild(label);
+      }
+
+      // Draw minute ticks (60 ticks)
+      for (let i = 0; i < 60; i++) {
+        if (i % 5 === 0) continue; // skip hour lines
+        const angle = i * 6 * Math.PI / 180;
+        const x1 = 100 + 82 * Math.sin(angle);
+        const y1 = 100 - 82 * Math.cos(angle);
+        const x2 = 100 + 86 * Math.sin(angle);
+        const y2 = 100 - 86 * Math.cos(angle);
+
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', x1.toString());
+        tick.setAttribute('y1', y1.toString());
+        tick.setAttribute('x2', x2.toString());
+        tick.setAttribute('y2', y2.toString());
+        tick.setAttribute('class', 'clock-tick');
+        svg.appendChild(tick);
+      }
+
+      // Draw Hour Hand
+      const hrAngle = (h * 30 + m * 0.5) * Math.PI / 180;
+      const hLength = 48;
+      const hx = 100 + hLength * Math.sin(hrAngle);
+      const hy = 100 - hLength * Math.cos(hrAngle);
+
+      const hrHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      hrHand.setAttribute('x1', '100');
+      hrHand.setAttribute('y1', '100');
+      hrHand.setAttribute('x2', hx.toString());
+      hrHand.setAttribute('y2', hy.toString());
+      hrHand.setAttribute('class', 'hand-hour');
+      svg.appendChild(hrHand);
+
+      // Draw Minute Hand
+      const minAngle = m * 6 * Math.PI / 180;
+      const mLength = 65;
+      const mx = 100 + mLength * Math.sin(minAngle);
+      const my = 100 - mLength * Math.cos(minAngle);
+
+      const minHand = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      minHand.setAttribute('x1', '100');
+      minHand.setAttribute('y1', '100');
+      minHand.setAttribute('x2', mx.toString());
+      minHand.setAttribute('y2', my.toString());
+      minHand.setAttribute('class', 'hand-minute');
+      svg.appendChild(minHand);
+
+      // Center Pin
+      const pin = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      pin.setAttribute('cx', '100');
+      pin.setAttribute('cy', '100');
+      pin.setAttribute('r', '6');
+      pin.setAttribute('class', 'clock-center');
+      svg.appendChild(pin);
+    }
+
+    function submitAnswer(chosenVal) {
+      if (chosenVal === correctTimeStr) {
+        score += 10;
+        document.getElementById('scoreText').textContent = toKhmerNum(score);
+        playSuccessSound();
+        showToast('ត្រឹមត្រូវហើយ! 👏', 'success');
+        
+        if (score % 50 === 0) {
+          triggerConfetti();
+        }
+        
+        generateNewTime();
+      } else {
+        playFailSound();
+        showToast('ខុសហើយ! ពិនិត្យមើលទ្រនិចនាឡិកាឡើងវិញ', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

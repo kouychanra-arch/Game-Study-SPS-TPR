@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ស្គាល់លុយរៀលខ្មែរ (Khmer Riel Currency)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .game-card {
+      max-width: 750px;
+      margin: 1.5rem auto;
+      padding: 2rem;
+    }
+
+    .riel-note {
+      position: relative;
+      width: 180px;
+      height: 95px;
+      border-radius: 8px;
+      padding: 0.5rem;
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: #fff;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      user-select: none;
+      font-weight: 700;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Color styles corresponding to actual banknotes */
+    .note-100 { background: linear-gradient(135deg, #d97706, #b45309); }
+    .note-500 { background: linear-gradient(135deg, #db2777, #be185d); }
+    .note-1000 { background: linear-gradient(135deg, #0d9488, #0f766e); }
+    .note-2000 { background: linear-gradient(135deg, #15803d, #166534); }
+    .note-5000 { background: linear-gradient(135deg, #854d0e, #713f12); }
+    .note-10000 { background: linear-gradient(135deg, #4f46e5, #4338ca); }
+    .note-20000 { background: linear-gradient(135deg, #ec4899, #db2777); }
+    .note-50000 { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+
+    .note-value-corner {
+      font-size: 0.9rem;
+      align-self: flex-start;
+    }
+
+    .note-center-txt {
+      font-size: 1.25rem;
+      text-align: center;
+      margin: auto 0;
+    }
+
+    .note-val-large {
+      font-size: 1.25rem;
+      align-self: flex-end;
+    }
+
+    .notes-display-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      min-height: 150px;
+      align-items: center;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 16px;
+      border: 1px dashed var(--glass-border);
+      margin-bottom: 2rem;
+    }
+
+    .choices-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .choice-btn {
+      padding: 1rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: white;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: var(--font-khmer);
+    }
+
+    .choice-btn:hover {
+      background: var(--glass-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .mode-btn-active {
+      background: var(--primary-gradient) !important;
+      border-color: transparent !important;
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #3b82f6;"></div>
+    <div class="blob blob-2" style="background: #10b981;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="glass-panel game-card">
+      
+      <!-- Mode Tabs -->
+      <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+        <button class="btn btn-secondary mode-btn-active" id="tab-id" onclick="switchMode('identify')">🔎 ស្គាល់ក្រដាសប្រាក់</button>
+        <button class="btn btn-secondary" id="tab-sum" onclick="switchMode('sum')">➕ បូកលុយរួម</button>
+        <button class="btn btn-secondary" id="tab-change" onclick="switchMode('change')">🛒 ទិញអាប់លុយ</button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0 10px;">
+        <div style="font-size: 1.1rem; font-weight: 600;">ពិន្ទុ៖ <span id="scoreText" style="color: #3b82f6; font-size: 1.5rem; font-weight: 800;">0</span></div>
+        <button class="btn btn-secondary" onclick="generateQuestion()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">ប្តូរសំណួរ</button>
+      </div>
+
+      <!-- Question Title -->
+      <h3 style="font-size: 1.3rem; font-weight: 700; text-align: center; margin-bottom: 1.5rem;" id="questionTitle">
+        តើនេះជាក្រដាសប្រាក់តម្លៃប៉ុន្មានរៀល?
+      </h3>
+
+      <!-- Banknote Display Box -->
+      <div class="notes-display-area" id="notesDisplay">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Choices -->
+      <div class="choices-grid" id="choicesContainer">
+        <!-- Choice buttons -->
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('៦. ស្គាល់លុយរៀលខ្មែរ (Khmer Riel)', true);
+      generateQuestion();
+    });
+
+    let currentMode = 'identify'; // identify, sum, change
+    let score = 0;
+    let correctAnswer = 0;
+
+    const notesDataset = [
+      { val: 100, label: '១០០', class: 'note-100' },
+      { val: 500, label: '៥០០', class: 'note-500' },
+      { val: 1000, label: '១ ០០០', class: 'note-1000' },
+      { val: 2000, label: '២ ០០០', class: 'note-2000' },
+      { val: 5000, label: '៥ ០០០', class: 'note-5000' },
+      { val: 10000, label: '១០ ០០០', class: 'note-10000' },
+      { val: 20000, label: '២០ ០០០', class: 'note-20000' },
+      { val: 50000, label: '៥០ ០០០', class: 'note-50000' }
+    ];
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function switchMode(mode) {
+      playClickSound();
+      currentMode = mode;
+      
+      document.querySelectorAll('.btn-secondary').forEach(btn => btn.classList.remove('mode-btn-active'));
+      if (mode === 'identify') document.getElementById('tab-id').classList.add('mode-btn-active');
+      if (mode === 'sum') document.getElementById('tab-sum').classList.add('mode-btn-active');
+      if (mode === 'change') document.getElementById('tab-change').classList.add('mode-btn-active');
+
+      generateQuestion();
+    }
+
+    // Helper to generate a banknote HTML string
+    function makeNoteHtml(noteObj) {
+      return `
+        <div class="riel-note ${noteObj.class}">
+          <span class="note-value-corner">${noteObj.label}</span>
+          <span class="note-center-txt">${noteObj.label} រៀល</span>
+          <span class="note-val-large">៛</span>
+        </div>
+      `;
+    }
+
+    function generateQuestion() {
+      const displayArea = document.getElementById('notesDisplay');
+      const choiceArea = document.getElementById('choicesContainer');
+      
+      displayArea.innerHTML = '';
+      choiceArea.innerHTML = '';
+
+      if (currentMode === 'identify') {
+        document.getElementById('questionTitle').textContent = '🔎 តើក្រដាសប្រាក់ខាងក្រោមនេះមានតម្លៃប៉ុន្មានរៀល?';
+        
+        // Pick random note
+        const note = notesDataset[Math.floor(Math.random() * notesDataset.length)];
+        correctAnswer = note.val;
+
+        displayArea.innerHTML = makeNoteHtml(note);
+
+        // Generate choices
+        const choices = new Set([correctAnswer]);
+        while (choices.size < 4) {
+          choices.add(notesDataset[Math.floor(Math.random() * notesDataset.length)].val);
+        }
+        
+        renderChoices(choices, ' រៀល');
+
+      } else if (currentMode === 'sum') {
+        document.getElementById('questionTitle').textContent = '➕ តើប្រាក់រៀលទាំងអស់បូកបញ្ចូលគ្នាស្មើនឹងប៉ុន្មានរៀល?';
+
+        // Select 2 to 3 random notes
+        const count = Math.floor(Math.random() * 2) + 2; // 2 or 3 notes
+        let sum = 0;
+        let notesHtml = '';
+        
+        for (let i = 0; i < count; i++) {
+          const note = notesDataset[Math.floor(Math.random() * notesDataset.length)];
+          sum += note.val;
+          notesHtml += makeNoteHtml(note);
+        }
+        correctAnswer = sum;
+        displayArea.innerHTML = notesHtml;
+
+        // Generate choices
+        const choices = new Set([correctAnswer]);
+        while (choices.size < 4) {
+          // Offsets that sound realistic in riels
+          const offset = (Math.floor(Math.random() * 6) - 3) * 500;
+          const fake = correctAnswer + offset;
+          if (fake > 0 && fake !== correctAnswer) {
+            choices.add(fake);
+          }
+        }
+        
+        renderChoices(choices, ' រៀល');
+
+      } else if (currentMode === 'change') {
+        // Buying items
+        // Pick one or two banknotes that teacher gives
+        const note = notesDataset[Math.floor(Math.random() * (notesDataset.length - 2)) + 2]; // 1000 to 50000
+        const cashGiven = note.val;
+        
+        // Price is less than cashGiven, rounded to 100 or 500
+        let price = 0;
+        if (cashGiven <= 1000) {
+          price = Math.floor(Math.random() * 8 + 1) * 100; // 100 to 800
+        } else if (cashGiven <= 5000) {
+          price = Math.floor(Math.random() * 8 + 1) * 500; // 500 to 4000
+        } else {
+          price = Math.floor(Math.random() * 8 + 1) * 1000; // 1000 to 8000
+        }
+        
+        // Ensure price is less than cashGiven
+        if (price >= cashGiven) {
+          price = cashGiven - 500;
+        }
+
+        correctAnswer = cashGiven - price;
+
+        document.getElementById('questionTitle').innerHTML = `🛒 ទិញទំនិញតម្លៃ <span style="color:#ef4444; font-weight:800;">${toKhmerNum(price)} ៛</span> ដោយជូនប្រាក់ទៅអ្នកលក់៖`;
+        displayArea.innerHTML = makeNoteHtml(note) + `<div style="font-size:1.5rem; font-weight:bold; margin-left: 1rem;">➡️ តើអ្នកលក់ត្រូវអាប់លុយវិញប៉ុន្មានរៀល?</div>`;
+
+        // Generate choices
+        const choices = new Set([correctAnswer]);
+        while (choices.size < 4) {
+          const offset = (Math.floor(Math.random() * 6) - 3) * 100;
+          const fake = correctAnswer + offset;
+          if (fake > 0 && fake !== correctAnswer) {
+            choices.add(fake);
+          }
+        }
+
+        renderChoices(choices, ' រៀល');
+      }
+    }
+
+    function renderChoices(choicesSet, suffix = '') {
+      const choicesArr = Array.from(choicesSet).sort(() => Math.random() - 0.5);
+      const choiceArea = document.getElementById('choicesContainer');
+      
+      choicesArr.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = toKhmerNum(choice) + suffix;
+        btn.addEventListener('click', () => submitAnswer(choice));
+        choiceArea.appendChild(btn);
+      });
+    }
+
+    function submitAnswer(chosenVal) {
+      if (chosenVal === correctAnswer) {
+        score += 10;
+        document.getElementById('scoreText').textContent = toKhmerNum(score);
+        playSuccessSound();
+        showToast('ឆ្លើយត្រូវហើយ! ពូកែមែន 👍', 'success');
+
+        if (score % 50 === 0) {
+          triggerConfetti();
+        }
+
+        generateQuestion();
+      } else {
+        playFailSound();
+        showToast('មិនត្រឹមត្រូវទេ! សាកល្បងគិតម្តងទៀត', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

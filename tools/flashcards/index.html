@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>បណ្ណពាក្យ (Flashcards)</title>
+  <link rel="stylesheet" href="../../global.css">
+  <style>
+    .flashcard-layout {
+      max-width: 650px;
+      margin: 1.5rem auto;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .deck-selector {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    /* 3D Flashcard styles */
+    .flashcard-scene {
+      width: 100%;
+      height: 280px;
+      perspective: 1000px;
+      margin-bottom: 2rem;
+      cursor: pointer;
+    }
+
+    .flashcard-card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .flashcard-card.is-flipped {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      border: 2px solid var(--glass-border);
+    }
+
+    .flashcard-front {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(236, 72, 153, 0.15));
+      color: white;
+    }
+
+    .flashcard-back {
+      background: rgba(15, 23, 42, 0.95);
+      transform: rotateY(180deg);
+      color: #93c5fd;
+    }
+
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .card-counter {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1" style="background: #f97316;"></div>
+    <div class="blob blob-2" style="background: #ec4899;"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="glass-panel flashcard-layout">
+      
+      <!-- Deck tabs selection -->
+      <div class="deck-selector">
+        <button class="btn btn-secondary" onclick="selectDeck('khmer')" id="deck-khmer">🇰🇭 វាក្យសព្ទខ្មែរ</button>
+        <button class="btn btn-secondary" onclick="selectDeck('math')" id="deck-math">➕ គណិតវិទ្យា</button>
+        <button class="btn btn-secondary" onclick="selectDeck('english')" id="deck-english">🇬🇧 ភាសាអង់គ្លេស</button>
+      </div>
+
+      <!-- 3D Card Scene -->
+      <div class="flashcard-scene" onclick="flipCard()">
+        <div class="flashcard-card" id="flashCard">
+          <!-- Front Face -->
+          <div class="flashcard-face flashcard-front">
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">❔ សំណួរ / ពាក្យគន្លឹះ</div>
+            <h2 id="cardFrontText" style="font-size: 2.2rem; font-weight:800; line-height: 1.3;">សិស្ស</h2>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2rem;">👆 ចុចលើកាតដើម្បីមើលចម្លើយ (Flip)</div>
+          </div>
+
+          <!-- Back Face -->
+          <div class="flashcard-face flashcard-back">
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">💡 ចម្លើយ / និយមន័យ</div>
+            <h2 id="cardBackText" style="font-size: 1.8rem; font-weight:700; line-height: 1.4;">អ្នករៀនសូត្រ ចំណេះដឹង នៅក្នុងសាលា។</h2>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2rem;">👆 ចុចលើកាតដើម្បីត្រឡប់វិញ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Row -->
+      <div class="nav-row">
+        <button class="btn btn-secondary" onclick="prevCard()">⬅️ ថយក្រោយ</button>
+        <span class="card-counter" id="cardCounter">១ / ៥</span>
+        <button class="btn btn-secondary" onclick="nextCard()">បន្ទាប់ ➡️</button>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="../../shared.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedPage('១៩. បណ្ណពាក្យ (Flashcards)', true);
+      selectDeck('khmer');
+    });
+
+    const decks = {
+      khmer: [
+        { front: 'សិស្ស', back: 'អ្នករៀនសូត្រ ឬទទួលចំណេះដឹងនៅក្នុងសាលារៀន។' },
+        { front: 'គ្រូបង្រៀន', back: 'បុគ្គលដែលបង្ហាត់បង្ហាញ និងផ្ទេរចំណេះដឹងដល់សិស្ស។' },
+        { front: 'បណ្ណាល័យ', back: 'ទីកន្លែងសម្រាប់ផ្ទុក ឬរក្សាទុកសៀវភៅសម្រាប់អាន និងស្រាវជ្រាវ។' },
+        { front: 'អក្ខរកម្ម', back: 'សមត្ថភាពក្នុងការអាន និងសរសេរអក្សរភាសាជាតិបាន។' },
+        { front: 'សីលធម៌', back: 'ច្បាប់វិន័យនៃការរស់នៅប្រកបដោយគុណធម៌ និងការគោរពគ្នា។' }
+      ],
+      math: [
+        { front: '៧ × ៨ = ?', back: '៥៦ (ហាសិបប្រាំមួយ)' },
+        { front: '១/២ + ១/៤ = ?', back: '៣/៤ (បីភាគបួន)' },
+        { front: 'មុំកែង', back: 'មុំដែលមានរង្វាស់ស្មើនឹង ៩០ ដឺក្រេ។' },
+        { front: 'រាងចតុកោណកែង', back: 'រាងដែលមានបួនជ្រុង មុំកែងបួន និងជ្រុងឈមគ្នាមានប្រវែងស្មើគ្នា។' },
+        { front: '៩ ÷ ៣ = ?', back: '៣ (បី)' }
+      ],
+      english: [
+        { front: 'Apple', back: 'ផ្លែប៉ោម (ផ្លែឈើពណ៌ក្រហម ឬបៃតង មានរសជាតិផ្អែមស្រួយ)' },
+        { front: 'Butterfly', back: 'មេអំបៅ (សត្វល្អិតដែលមានស្លាបស្អាតៗហោះហើរ)' },
+        { front: 'Library', back: 'បណ្ណាល័យ (កន្លែងអានសៀវភៅ)' },
+        { front: 'Welcome', back: 'ស្វាគមន៍ (ពាក្យគួរសមទទួលភ្ញៀវ)' },
+        { front: 'Computer', back: 'កុំព្យូទ័រ (ឧបករណ៍អេឡិចត្រូនិកទំនើប)' }
+      ]
+    };
+
+    let activeDeckName = 'khmer';
+    let activeIndex = 0;
+
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    function toKhmerNum(num) {
+      return num.toString().split('').map(char => {
+        if (isNaN(parseInt(char))) return char;
+        return khmerDigits[parseInt(char)];
+      }).join('');
+    }
+
+    function selectDeck(deckName) {
+      playClickSound();
+      activeDeckName = deckName;
+      activeIndex = 0;
+
+      // Update tabs style
+      document.querySelectorAll('.deck-selector .btn').forEach(btn => {
+        btn.className = 'btn btn-secondary';
+      });
+      document.getElementById(`deck-${deckName}`).className = 'btn btn-primary';
+
+      // Reset card flip
+      const card = document.getElementById('flashCard');
+      card.classList.remove('is-flipped');
+
+      renderCard();
+    }
+
+    function renderCard() {
+      const deck = decks[activeDeckName];
+      const item = deck[activeIndex];
+
+      document.getElementById('cardFrontText').textContent = item.front;
+      document.getElementById('cardBackText').textContent = item.back;
+
+      // Render counter
+      const curKh = toKhmerNum(activeIndex + 1);
+      const totKh = toKhmerNum(deck.length);
+      document.getElementById('cardCounter').textContent = `${curKh} / ${totKh}`;
+    }
+
+    function flipCard() {
+      playClickSound();
+      const card = document.getElementById('flashCard');
+      card.classList.toggle('is-flipped');
+    }
+
+    function nextCard() {
+      playClickSound();
+      const deck = decks[activeDeckName];
+      const card = document.getElementById('flashCard');
+      
+      // Reset flip style
+      card.classList.remove('is-flipped');
+
+      setTimeout(() => {
+        activeIndex = (activeIndex + 1) % deck.length;
+        renderCard();
+      }, 150);
+    }
+
+    function prevCard() {
+      playClickSound();
+      const deck = decks[activeDeckName];
+      const card = document.getElementById('flashCard');
+      
+      card.classList.remove('is-flipped');
+
+      setTimeout(() => {
+        activeIndex = (activeIndex - 1 + deck.length) % deck.length;
+        renderCard();
+      }, 150);
+    }
+  </script>
+</body>
+</html>
